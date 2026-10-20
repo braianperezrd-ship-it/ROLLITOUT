@@ -64,10 +64,10 @@ Upgrade cards are data in `CardDefs` (`UpgradeManager.cs`): name, category, rari
 are read in `PlayerUpgradeState`; on-hit, on-kill and trail cards run in `PlayerCardEffects`. Rewards are weighted by
 rarity (Common 6 : Rare 3 : Epic 1) and never repeat a card within one offer.
 
-There are 40 cards. The design doc's five XP / elite utility cards (Magnet, Greed, Vacuum, Lucky, Treasure Hunter) wait
+There are 41 cards. The design doc's five XP / elite utility cards (Magnet, Greed, Vacuum, Lucky, Treasure Hunter) wait
 for those systems; their slots hold Regenerate (healing), Deflect, Steamroller (crush), Wrecking Ball (Collision epic) and
 Overdrive (Movement epic). Four Dash cards build on the dash: Quick Dash (-15% recharge, max 3), Double Dash (store 2
 dashes), Phase Dash (no damage while dashing) and Reflect Dash (dashing into a projectile sends it back for 15 damage to the
-enemy it hits). Stacking stat cards have caps (Speed 5, Heavy Ball 5, Big Ball 4, Wound 4) so long runs stay
+enemy it hits), plus Slingshot (wall bounces gain +30% speed up to 2.4x max speed and restart the dash burst). Stacking stat cards have caps (Speed 5, Heavy Ball 5, Big Ball 4, Wound 4) so long runs stay
 controllable. Trail zones of one kind (Dust Trail, Rolling Fire, Blood Trail, Aftershock) don't stack on the same enemy,
 so a trail deals the damage per second it says.

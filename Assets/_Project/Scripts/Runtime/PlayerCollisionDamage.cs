@@ -27,6 +27,8 @@ namespace RollItOut
         public const float MinSpeedDamage = 0.6f, MaxSpeedDamage = 2.5f;
         /// <summary>Speed multiplier per wall bounce, capped at a multiple of max speed.</summary>
         public const float WallSpeedGain = 1.15f, WallSpeedCap = 1.8f;
+        /// <summary>Slingshot: bigger speed gain and cap per wall bounce, and the bounce restarts the dash burst.</summary>
+        public const float SlingshotSpeedGain = 1.3f, SlingshotSpeedCap = 2.4f;
         /// <summary>Each bounce banks a charge: +damage on the next enemy hit, if it lands within the window.</summary>
         public const int MaxWallCharges = 3;
         public const float WallChargeDamage = 0.25f, WallChargeWindow = 2f;
@@ -87,7 +89,8 @@ namespace RollItOut
             if (Vector2.Dot(pre.normalized, n) > -0.3f) return; // grazing along the wall, not hitting it
 
             nextWallBounceTime = Time.time + WallBounceCooldown;
-            ctrl.WallBounce(pre, n, WallSpeedGain, up.MaxSpeed * WallSpeedCap);
+            bool sling = up.Has(UpgradeType.Slingshot);
+            ctrl.WallBounce(pre, n, sling ? SlingshotSpeedGain : WallSpeedGain, up.MaxSpeed * (sling ? SlingshotSpeedCap : WallSpeedCap), sling);
 
             up.wallCharges = up.ActiveWallCharges < MaxWallCharges ? up.ActiveWallCharges + 1 : MaxWallCharges;
             up.wallChargeUntil = Time.time + WallChargeWindow;
