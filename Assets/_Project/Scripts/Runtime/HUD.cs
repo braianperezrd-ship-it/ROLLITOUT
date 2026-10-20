@@ -47,6 +47,7 @@ namespace RollItOut
             DrawHearts();
             Text(new Rect(W * 0.5f - 150, 8, 300, 36), "ROUND " + round.Round, mid, Color.white);
             Text(new Rect(W - 230, 8, 220, 28), "Enemies: " + round.AliveCount, small, new Color(1f, 1f, 1f, 0.85f));
+            DrawCheckpoints(W);
             DrawStacks(W);
             DrawXp(W);
             if (round.State == GameState.Playing) DrawDash();
@@ -256,6 +257,39 @@ namespace RollItOut
                     RingTex(new Rect(cx - 34, cy - 34, 68, 68), new Color(c.r, c.g, c.b, 0.5f));
                     break;
             }
+        }
+
+        /// <summary>Progress line, a number over each pad on screen, and an arrow at the screen edge toward the next one.</summary>
+        void DrawCheckpoints(float W)
+        {
+            var next = Checkpoint.Next;
+            string line = next == null ? "All checkpoints complete!" : "Checkpoint " + Checkpoint.Completed + "/" + Checkpoint.Count;
+            Text(new Rect(W - 230, 34, 220, 26), line, small, next == null ? new Color(0.35f, 1f, 0.55f) : new Color(1f, 0.85f, 0.3f));
+
+            var cam = Camera.main;
+            if (cam == null || round.State == GameState.Reward || round.State == GameState.GameOver) return;
+            float s = Screen.height / H;
+            foreach (var cp in Checkpoint.All)
+            {
+                Vector3 sp = cam.WorldToScreenPoint(cp.transform.position + Vector3.up * 1.3f);
+                float x = sp.x / s, y = (Screen.height - sp.y) / s;
+                if (x < -40 || x > W + 40 || y < -40 || y > H + 40) continue;
+                Color c = cp.Spent ? new Color(0.5f, 0.5f, 0.55f) : cp.Done ? new Color(0.35f, 1f, 0.55f) : cp == next ? new Color(1f, 0.85f, 0.3f) : new Color(0.7f, 0.7f, 0.75f);
+                Text(new Rect(x - 30, y - 18, 60, 36), (cp.Index + 1).ToString(), mid, c);
+            }
+
+            if (next == null) return;
+            Vector3 np = cam.WorldToScreenPoint(next.transform.position);
+            Vector2 p = new Vector2(np.x / s, (Screen.height - np.y) / s);
+            const float edge = 60f;
+            if (p.x >= edge && p.x <= W - edge && p.y >= edge && p.y <= H - edge) return; // on screen: the pad itself is enough
+            Vector2 center = new Vector2(W * 0.5f, H * 0.5f);
+            Vector2 d = p - center;
+            float k = Mathf.Min((W * 0.5f - edge) / Mathf.Max(0.001f, Mathf.Abs(d.x)), (H * 0.5f - edge) / Mathf.Max(0.001f, Mathf.Abs(d.y)));
+            Vector2 a = center + d * k;
+            float pulse = 0.75f + 0.25f * Mathf.Sin(Time.unscaledTime * 6f);
+            Dia(new Rect(a.x - 18, a.y - 18, 36, 36), new Color(1f, 0.85f, 0.3f, pulse));
+            Text(new Rect(a.x - 30, a.y - 16, 60, 32), (next.Index + 1).ToString(), small, new Color(0.1f, 0.1f, 0.15f));
         }
 
         void DrawGameOver(float W)

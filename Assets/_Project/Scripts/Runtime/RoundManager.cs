@@ -75,42 +75,13 @@ namespace RollItOut
             ball.Teleport(cp.transform.position);
             health.Revive(RespawnInvulnerability);
             Fx.Burst(cp.transform.position, new Color(0.35f, 1f, 0.55f), 24, 7f, 0.2f, 0.6f);
-            int left = 0;
-            foreach (var c in Checkpoint.All) if (!c.Spent) left++;
-            ShowBanner("RESPAWNED", left == 0 ? "No checkpoints left - next fall is final!" : "Checkpoint used up - find another one", 2f);
+            ShowBanner("RESPAWNED", Checkpoint.Next == null ? "No checkpoints left - next fall is final!" : "Checkpoint used up - reach the next one", 2f);
         }
 
-        /// <summary>XP needed to go from level n to n+1: 8, 13, 20, 29, 40...</summary>
-        public static int XpForLevel(int n) { return 8 + 4 * (n - 1) + (n - 1) * (n - 1); }
-
-        static int XpFor(EnemyDef d) { return Mathf.Max(1, Mathf.RoundToInt(d.hp / 10f)); }
-
-        public void AddXp(int amount)
+        /// <summary>Checkpoint completed: queue a card pick (shares the level-up flow), then carry on with the same round.</summary>
+        public void OfferCheckpointReward(int number)
         {
-            Xp += amount;
-            while (Xp >= XpNeeded)
-            {
-                Xp -= XpNeeded;
-                Level++;
-                GrantCard("LEVEL UP!  LV " + Level);
-            }
-        }
-
-        /// <summary>Queues one card pick; shown right away (or after the round clears if that's already under way).</summary>
-        public void GrantCard(string title = "CHOOSE AN UPGRADE")
-        {
-            PendingCards++;
-            if (RewardTitle != title && State != GameState.Reward) RewardTitle = title;
-        }
-
-        void EnterReward()
-        {
-            Offered = upgrades.Roll(3);
-            Selected = -1;
-            Highlight = 1;
-            InputReader.NavStep(); // swallow the stick state held from play
-            State = GameState.Reward;
-            Time.timeScale = 0f; // pause combat while the cards are open
+            GrantCard("CHECKPOINT " + number + "/" + Checkpoint.Count + " COMPLETE");
         }
 
         public void ShowBanner(string title, string sub, float seconds)
