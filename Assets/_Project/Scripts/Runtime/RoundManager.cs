@@ -22,6 +22,12 @@ namespace RollItOut
         public PlayerUpgradeState PlayerUpgrades => upgrades.state;
 
         public int Round { get; private set; }
+        public int Level { get; private set; } = 1;
+        public int Xp { get; private set; }
+        public int XpNeeded => XpForLevel(Level);
+        /// <summary>Card picks waiting to be shown (level-ups, and anything else that grants a card via GrantCard).</summary>
+        public int PendingCards { get; private set; }
+        public string RewardTitle { get; private set; } = "CHOOSE AN UPGRADE";
         public GameState State { get; private set; } = GameState.Playing;
         public List<UpgradeType> Offered { get; private set; } = new List<UpgradeType>();
         public int Selected { get; private set; } = -1;
@@ -72,6 +78,39 @@ namespace RollItOut
             int left = 0;
             foreach (var c in Checkpoint.All) if (!c.Spent) left++;
             ShowBanner("RESPAWNED", left == 0 ? "No checkpoints left - next fall is final!" : "Checkpoint used up - find another one", 2f);
+        }
+
+        /// <summary>XP needed to go from level n to n+1: 8, 13, 20, 29, 40...</summary>
+        public static int XpForLevel(int n) { return 8 + 4 * (n - 1) + (n - 1) * (n - 1); }
+
+        static int XpFor(EnemyDef d) { return Mathf.Max(1, Mathf.RoundToInt(d.hp / 10f)); }
+
+        public void AddXp(int amount)
+        {
+            Xp += amount;
+            while (Xp >= XpNeeded)
+            {
+                Xp -= XpNeeded;
+                Level++;
+                GrantCard("LEVEL UP!  LV " + Level);
+            }
+        }
+
+        /// <summary>Queues one card pick; shown right away (or after the round clears if that's already under way).</summary>
+        public void GrantCard(string title = "CHOOSE AN UPGRADE")
+        {
+            PendingCards++;
+            if (RewardTitle != title && State != GameState.Reward) RewardTitle = title;
+        }
+
+        void EnterReward()
+        {
+            Offered = upgrades.Roll(3);
+            Selected = -1;
+            Highlight = 1;
+            InputReader.NavStep(); // swallow the stick state held from play
+            State = GameState.Reward;
+            Time.timeScale = 0f; // pause combat while the cards are open
         }
 
         public void ShowBanner(string title, string sub, float seconds)
@@ -161,6 +200,7 @@ namespace RollItOut
         public void OnEnemyDied(EnemyController e)
         {
             alive.Remove(e);
+            AddXp(XpFor(e.Def));
             if (effects != null) effects.OnEnemyKilled(e); // may kill more enemies (Explosive Impact)
             if (State == GameState.Playing && alive.Count == 0) BeginClear();
         }
@@ -187,17 +227,14 @@ namespace RollItOut
             {
                 case GameState.Playing:
                     if (BannerTime > 0f) BannerTime -= Time.deltaTime;
+                    if (PendingCards > 0) EnterReward();
                     break;
                 case GameState.Clearing:
                     clearTimer -= Time.deltaTime;
                     if (clearTimer <= 0f)
                     {
-                        Offered = upgrades.Roll(3);
-                        Selected = -1;
-                        Highlight = 1;
-                        InputReader.NavStep(); // swallow the stick state held from play
-                        State = GameState.Reward;
-                        Time.timeScale = 0f; // pause combat while the cards are open
+                        if (PendingCards > 0) EnterReward();
+                        else StartRound(Round + 1);
                     }
                     break;
                 case GameState.Reward:
@@ -212,9 +249,16 @@ namespace RollItOut
                     {
                         upgrades.Apply(Offered[Selected]);
                         health.OnCardTaken(Offered[Selected]);
+                        PendingCards--;
+                        if (PendingCards > 0) { EnterReward(); break; }
+                        RewardTitle = "CHOOSE AN UPGRADE";
                         Time.timeScale = 1f;
-                        ClearProjectiles();
-                        StartRound(Round + 1);
+                        if (alive.Count == 0)
+                        {
+                            ClearProjectiles();
+                            StartRound(Round + 1);
+                        }
+                        else State = GameState.Playing;
                     }
                     break;
                 case GameState.GameOver:
