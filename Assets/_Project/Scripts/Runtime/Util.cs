@@ -31,7 +31,7 @@ namespace RollItOut
     /// <summary>Procedurally generated sprites so the prototype needs no art assets.</summary>
     public static class SpriteLib
     {
-        static Sprite circle, ring, square, diamond, checker;
+        static Sprite circle, ring, square, diamond, checker, sand;
 
         public static Sprite Circle => circle != null ? circle : (circle = Make(128, (x, y) => Mathf.Clamp01((1f - Mathf.Sqrt(x * x + y * y)) * 24f)));
 
@@ -71,6 +71,31 @@ namespace RollItOut
                         tex.SetPixel(x, y, ((x / 32) + (y / 32)) % 2 == 0 ? a : b);
                 tex.Apply();
                 return checker = Sprite.Create(tex, new Rect(0, 0, 64, 64), new Vector2(0.5f, 0.5f), 32f, 0, SpriteMeshType.FullRect);
+            }
+        }
+
+        /// <summary>Seamless 4x4 unit desert sand tile (grain + wind ripples); draw it with SpriteDrawMode.Tiled.</summary>
+        public static Sprite Sand
+        {
+            get
+            {
+                if (sand != null) return sand;
+                const int n = 64;
+                var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Repeat };
+                var dark = new Color(0.55f, 0.41f, 0.24f);
+                var light = new Color(0.68f, 0.53f, 0.32f);
+                var rng = new System.Random(7);
+                for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
+                    {
+                        // Diagonal ripples whose periods divide the tile so it wraps without seams.
+                        float u = (x + y) / (float)n * Mathf.PI * 2f;
+                        float ripple = Mathf.Sin(u * 3f + Mathf.Sin(y / (float)n * Mathf.PI * 2f) * 1.5f);
+                        float k = 0.55f + 0.18f * ripple + ((float)rng.NextDouble() - 0.5f) * 0.18f;
+                        tex.SetPixel(x, y, Color.Lerp(dark, light, k));
+                    }
+                tex.Apply();
+                return sand = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 16f, 0, SpriteMeshType.FullRect);
             }
         }
 
