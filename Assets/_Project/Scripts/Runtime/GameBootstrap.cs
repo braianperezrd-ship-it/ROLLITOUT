@@ -10,7 +10,7 @@ namespace RollItOut
     public static class GameBootstrap
     {
         static GameObject root;
-        static readonly Vector2 ArenaHalf = new Vector2(55f, 30f); // 5x the original 22x12 playfield; the camera follows the ball
+        static readonly Vector2 ArenaHalf = new Vector2(275f, 150f); // 25x the original 22x12 playfield; the camera follows the ball
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Init()
