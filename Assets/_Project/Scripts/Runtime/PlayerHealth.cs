@@ -50,6 +50,15 @@ namespace RollItOut
 
         public void OnRoundStart() { secondChanceUsed = false; }
 
+        /// <summary>Checkpoint respawn: back to full hearts with a longer blink so nothing hits on arrival.</summary>
+        public void Revive(float invulnSeconds)
+        {
+            Dead = false;
+            damageTaken = 0f;
+            lastDamagedTime = Time.time;
+            invulnUntil = Time.time + invulnSeconds;
+        }
+
         /// <summary>Give back hearts (fractions allowed, e.g. Vampire), never above the maximum.</summary>
         public void Heal(float hearts, bool bigFx = true)
         {
@@ -132,7 +141,7 @@ namespace RollItOut
             {
                 // Hard white flash first, then a readable blink for the rest of the i-frames.
                 float since = Time.time - (invulnUntil - InvulnerabilityTime);
-                if (since < 0.08f) body.color = Color.white;
+                if (since >= 0f && since < 0.08f) body.color = Color.white; // negative after a revive: blink only
                 else body.color = Mathf.Repeat(Time.time * 12f, 1f) < 0.5f ? new Color(1f, 1f, 1f, 0.55f) : baseColor;
             }
             else body.color = baseColor;
