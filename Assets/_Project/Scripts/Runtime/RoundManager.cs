@@ -13,6 +13,8 @@ namespace RollItOut
         const float SelectFlashTime = 0.35f;
         /// <summary>Every round spawns this many times the base Composition, so the screen stays crowded on the 110x60 map.</summary>
         public const int EnemyCountMultiplier = 4;
+        /// <summary>Global enemy HP factor (40% less than EnemyDefs). XP still comes from the base HP, so kills give the same XP.</summary>
+        public const float EnemyHpMultiplier = 0.6f;
         /// <summary>Share of each round spawned in a ring just off-screen (they converge within seconds); the rest anywhere on the map.</summary>
         const float NearSpawnShare = 0.7f;
         const float NearSpawnMin = 14f, NearSpawnMax = 24f, MinSpawnDistance = 8f;
@@ -138,7 +140,7 @@ namespace RollItOut
             Selected = -1;
 
             // Pressure ramps one or two variables at a time: counts early, then HP + speed from round 6, projectiles from round 4.
-            hpScale = n > 5 ? 1f + 0.1f * (n - 5) : 1f;
+            hpScale = EnemyHpMultiplier * (n > 5 ? 1f + 0.1f * (n - 5) : 1f);
             speedScale = n > 5 ? Mathf.Min(1.25f, 1f + 0.02f * (n - 5)) : 1f;
             projScale = n > 4 ? Mathf.Min(1.3f, 1f + 0.03f * (n - 4)) : 1f;
             cooldownScale = n > 4 ? Mathf.Max(0.7f, 1f - 0.03f * (n - 4)) : 1f;
