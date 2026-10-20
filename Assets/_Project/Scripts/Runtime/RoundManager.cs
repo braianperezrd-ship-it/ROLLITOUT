@@ -91,8 +91,8 @@ namespace RollItOut
             GrantCard("CHECKPOINT " + number + "/" + Checkpoint.Count + " COMPLETE");
         }
 
-        /// <summary>XP needed to go from level n to n+1: 20, 32, 50, 72, 100... (scaled with EnemyCountMultiplier; ~40% less than before so levels come faster).</summary>
-        public static int XpForLevel(int n) { return EnemyCountMultiplier * 5 * (8 + 4 * (n - 1) + (n - 1) * (n - 1)) / 8; }
+        /// <summary>XP needed to go from level n to n+1: 8, 13, 20, 29, 40, 53... Round 1 (40 XP) is worth about three levels.</summary>
+        public static int XpForLevel(int n) { return EnemyCountMultiplier * (8 + 4 * (n - 1) + (n - 1) * (n - 1)) / 4; }
 
         static int XpFor(EnemyDef d) { return Mathf.Max(1, Mathf.RoundToInt(d.hp / 10f)); }
 
