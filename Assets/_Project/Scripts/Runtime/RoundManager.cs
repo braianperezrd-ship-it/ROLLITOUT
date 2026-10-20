@@ -11,8 +11,10 @@ namespace RollItOut
         public const float ClearDelay = 0.7f;
         public const float RespawnInvulnerability = 2f;
         const float SelectFlashTime = 0.35f;
-        /// <summary>Every round spawns this many times the base Composition, so the screen stays crowded on the 110x60 map.</summary>
-        public const int EnemyCountMultiplier = 4;
+        /// <summary>Base Composition is multiplied by this, ramping from StartCountMultiplier in round 1 by CountMultiplierStep per round up to
+        /// MaxCountMultiplier, so early rounds feel sparse and the screen fills up as the run goes on.</summary>
+        public const float StartCountMultiplier = 1.5f, CountMultiplierStep = 0.5f, MaxCountMultiplier = 4f;
+        public static float EnemyCountMultiplier(int round) { return Mathf.Min(MaxCountMultiplier, StartCountMultiplier + CountMultiplierStep * (round - 1)); }
         /// <summary>Global enemy HP factor (40% less than EnemyDefs). XP still comes from the base HP, so kills give the same XP.</summary>
         public const float EnemyHpMultiplier = 0.6f;
         /// <summary>Share of each round spawned in a ring just off-screen (they converge within seconds); the rest anywhere on the map.</summary>
@@ -91,8 +93,8 @@ namespace RollItOut
             GrantCard("CHECKPOINT " + number + "/" + Checkpoint.Count + " COMPLETE");
         }
 
-        /// <summary>XP needed to go from level n to n+1: 8, 13, 20, 29, 40, 53... Round 1 (40 XP) is worth about three levels.</summary>
-        public static int XpForLevel(int n) { return EnemyCountMultiplier * (8 + 4 * (n - 1) + (n - 1) * (n - 1)) / 4; }
+        /// <summary>XP needed to go from level n to n+1: 8, 13, 20, 29, 40, 53... Round 1 (16 XP) is worth about one level.</summary>
+        public static int XpForLevel(int n) { return 8 + 4 * (n - 1) + (n - 1) * (n - 1); }
 
         static int XpFor(EnemyDef d) { return Mathf.Max(1, Mathf.RoundToInt(d.hp / 10f)); }
 
@@ -166,7 +168,8 @@ namespace RollItOut
         static List<KeyValuePair<EnemyType, int>> Composition(int n)
         {
             var l = new List<KeyValuePair<EnemyType, int>>();
-            void Add(EnemyType t, int c) { if (c > 0) l.Add(new KeyValuePair<EnemyType, int>(t, c * EnemyCountMultiplier)); }
+            float mul = EnemyCountMultiplier(n);
+            void Add(EnemyType t, int c) { if (c > 0) l.Add(new KeyValuePair<EnemyType, int>(t, Mathf.Max(1, Mathf.RoundToInt(c * mul)))); }
             if (n == 1) { Add(EnemyType.Skeleton, 5); }
             else if (n == 2) { Add(EnemyType.Skeleton, 3); Add(EnemyType.Goblin, 3); Add(EnemyType.Archer, 1); }
             else if (n == 3) { Add(EnemyType.Skeleton, 3); Add(EnemyType.Goblin, 3); Add(EnemyType.Orc, 1); Add(EnemyType.Archer, 2); }
