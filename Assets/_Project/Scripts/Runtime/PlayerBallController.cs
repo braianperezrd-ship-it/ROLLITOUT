@@ -136,6 +136,14 @@ namespace RollItOut
                 Ghost.Create(sprites, new Color(0.6f, 0.85f, 1f), dashTimer > 0f ? 0.5f : 0.3f, 0.18f);
         }
 
+        /// <summary>Bounces the ball off a wall: mirrors its velocity (and any dash) and multiplies the speed, up to cap.</summary>
+        public void WallBounce(Vector2 pre, Vector2 normal, float gain, float cap)
+        {
+            Vector2 v = Vector2.Reflect(pre, normal);
+            SetVelocity(v.normalized * Mathf.Min(v.magnitude * gain, Mathf.Max(cap, pre.magnitude)));
+            if (dashTimer > 0f) dashDir = Vector2.Reflect(dashDir, normal).normalized;
+        }
+
         public void SetVelocity(Vector2 v)
         {
             rb.SetVel(v);

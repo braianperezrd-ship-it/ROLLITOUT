@@ -104,6 +104,16 @@ namespace RollItOut
             Color c = ready ? new Color(0.55f * pulse, 0.85f * pulse, 1f) : new Color(0.35f, 0.5f, 0.7f);
             Fill(new Rect(r.x, r.y, r.width * ball.DashCharge, r.height), c);
             Text(new Rect(r.x, r.y - 22, r.width, 20), ready ? "DASH  [Space / Shift / A]" : "DASH", tiny, new Color(1f, 1f, 1f, ready ? 0.9f : 0.55f));
+
+            // Wall bounce charges banked for the next hit, as pips right of the dash bar.
+            int charges = upgrades.ActiveWallCharges;
+            for (int i = 0; i < PlayerCollisionDamage.MaxWallCharges; i++)
+            {
+                var p = new Rect(r.xMax + 12 + i * 20, r.y - 2, 16, 16);
+                Disc(new Rect(p.x - 2, p.y - 2, p.width + 4, p.height + 4), new Color(0f, 0f, 0f, 0.75f));
+                Disc(p, i < charges ? new Color(1f, 0.55f - 0.12f * i, 0.15f) : new Color(0.2f, 0.18f, 0.16f));
+            }
+            if (charges > 0) Text(new Rect(r.xMax + 8, r.y - 22, 80, 20), "BANK x" + charges, tiny, new Color(1f, 0.7f, 0.3f));
         }
 
         void DrawStacks(float W)
