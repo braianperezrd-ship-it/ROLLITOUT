@@ -48,7 +48,7 @@ namespace RollItOut
         public bool RecentlyDashed => Time.time < lastDashTime + DashDuration + DashGrace;
         const float DashGrace = 0.2f;
         /// <summary>Phase Dash and Reflect Dash protect for this long after a dash starts.</summary>
-        public const float DashProtectionTime = 1f;
+        public const float DashProtectionTime = 0.5f;
         public bool InDashMotion => Time.time < lastDashTime + DashProtectionTime;
         const float DashTrailSpeed = 1.15f;
 
