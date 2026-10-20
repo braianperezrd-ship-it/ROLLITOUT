@@ -14,7 +14,9 @@ namespace RollItOut
         /// <summary>Base Composition is multiplied by this, ramping from StartCountMultiplier in round 1 by CountMultiplierStep per round up to
         /// MaxCountMultiplier, so early rounds feel sparse and the screen fills up as the run goes on.</summary>
         public const float StartCountMultiplier = 1.5f, CountMultiplierStep = 0.5f, MaxCountMultiplier = 4f;
-        public static float EnemyCountMultiplier(int round) { return Mathf.Min(MaxCountMultiplier, StartCountMultiplier + CountMultiplierStep * (round - 1)); }
+        /// <summary>Flat extra on top of the ramp (+15% enemies every round).</summary>
+        public const float EnemyQuantityBoost = 1.15f;
+        public static float EnemyCountMultiplier(int round) { return EnemyQuantityBoost * Mathf.Min(MaxCountMultiplier, StartCountMultiplier + CountMultiplierStep * (round - 1)); }
         /// <summary>Global enemy HP factor (40% less than EnemyDefs). XP still comes from the base HP, so kills give the same XP.</summary>
         public const float EnemyHpMultiplier = 0.6f;
         /// <summary>Share of each round spawned in a ring just off-screen (they converge within seconds); the rest anywhere on the map.</summary>
