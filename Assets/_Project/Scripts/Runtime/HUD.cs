@@ -49,6 +49,7 @@ namespace RollItOut
             Text(new Rect(W - 230, 8, 220, 28), "Enemies: " + round.AliveCount, small, new Color(1f, 1f, 1f, 0.85f));
             DrawCheckpoints(W);
             DrawStacks(W);
+            DrawXp(W);
             if (round.State == GameState.Playing) DrawDash();
 
             if (round.State == GameState.Playing && round.BannerTime > 0f)
@@ -122,6 +123,17 @@ namespace RollItOut
             if (charges > 0) Text(new Rect(pipsEnd, r.y - 5, 80, 20), "BANK x" + charges, tiny, new Color(1f, 0.7f, 0.3f));
         }
 
+        void DrawXp(float W)
+        {
+            // Thin bar along the bottom edge with the level on its left.
+            var r = new Rect(70, H - 22, W - 140, 12);
+            Fill(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), new Color(0f, 0f, 0f, 0.75f));
+            Fill(r, new Color(0.12f, 0.16f, 0.14f));
+            Fill(new Rect(r.x, r.y, r.width * Mathf.Clamp01(round.Xp / (float)round.XpNeeded), r.height), new Color(0.35f, 0.95f, 0.5f));
+            Text(new Rect(8, H - 30, 58, 28), "LV " + round.Level, mid, new Color(0.6f, 1f, 0.7f));
+            Text(new Rect(r.xMax + 6, H - 28, 64, 24), round.Xp + "/" + round.XpNeeded, tiny, new Color(1f, 1f, 1f, 0.8f));
+        }
+
         void DrawStacks(float W)
         {
             float y = 40;
@@ -138,11 +150,7 @@ namespace RollItOut
         void DrawRewards(float W)
         {
             Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0.03f, 0.72f));
-            if (round.CheckpointReward > 0)
-            {
-                Text(new Rect(0, 46, W, 44), "CHECKPOINT " + round.CheckpointReward + "/" + Checkpoint.Count + " COMPLETE", mid, new Color(0.35f, 1f, 0.55f));
-            }
-            Text(new Rect(0, 90, W, 60), "CHOOSE AN UPGRADE", big, Color.white);
+            Text(new Rect(0, 90, W, 60), round.RewardTitle, big, Color.white);
 
             Text(new Rect(0, 150, W, 30), "Click, press 1 / 2 / 3, or stick left/right + A", small, new Color(1f, 1f, 1f, 0.6f));
             const float cw = 250f, ch = 310f, gap = 32f;
