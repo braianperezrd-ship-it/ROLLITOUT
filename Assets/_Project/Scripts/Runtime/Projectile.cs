@@ -19,8 +19,8 @@ namespace RollItOut
         public const float Damage = 1f;
         /// <summary>Reflect Dash: damage a sent-back shot deals to the enemy it hits, and its speed boost.</summary>
         public const float ReflectedDamage = 15f, ReflectSpeedMultiplier = 1.4f;
-        /// <summary>Seconds an enemy shot lives after being fired (halved from 7s so the crowded screen clears faster).</summary>
-        public const float Lifetime = 3.5f;
+        /// <summary>Seconds an enemy shot lives after being fired (7s, halved to 3.5s, then halved again so the crowded screen clears faster).</summary>
+        public const float Lifetime = 1.75f;
         // Shot kind tuning.
         const float AccelStart = 0.35f, AccelEnd = 1.7f, AccelTime = 1.1f;
         const float WaveAmp = 0.7f, WaveFreq = 7f;
@@ -149,7 +149,7 @@ namespace RollItOut
             if (kind == ShotKind.Boomerang || kind == ShotKind.Accel) speed = baseSpeed * ReflectSpeedMultiplier;
             kind = ShotKind.Normal; // a sent-back shot just flies straight
             if (spin != null) spin.localRotation = Quaternion.identity;
-            life = 3f;
+            life = 1.5f;
             transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
             foreach (var sr in GetComponentsInChildren<SpriteRenderer>())
                 if (sr.name == "Core" || sr.name == "Glow") sr.color = new Color(0.6f, 0.9f, 1f, sr.name == "Glow" ? 0.3f : 1f);
