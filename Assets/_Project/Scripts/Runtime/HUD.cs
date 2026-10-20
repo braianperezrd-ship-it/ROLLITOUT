@@ -85,7 +85,8 @@ namespace RollItOut
             }
             float y = 108;
             if (health.SecondChanceReady) { Text(new Rect(10, y, 160, 22), "Second Chance ready", tiny, new Color(1f, 0.9f, 0.4f)); y += 20; }
-            if (health.HardenedActive) Text(new Rect(10, y, 160, 22), "Hardened", tiny, new Color(0.8f, 0.85f, 1f));
+            if (health.HardenedActive) { Text(new Rect(10, y, 160, 22), "Hardened", tiny, new Color(0.8f, 0.85f, 1f)); y += 20; }
+            if (health.LastStandActive) Text(new Rect(10, y, 160, 22), "Last Stand", tiny, new Color(1f, 0.35f, 0.35f));
         }
 
         PlayerBallController ball;

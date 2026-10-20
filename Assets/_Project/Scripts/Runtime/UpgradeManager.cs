@@ -11,7 +11,8 @@ namespace RollItOut
         Rush, Crusher, Impact, Boulder, ChainImpact, Ricochet, DeepWound, SpreadingWound, OpenWound, BloodTrail,
         IronShell, ReinforcedCore, SecondChance, Hardened, SafeRoll, DustTrail, Shockwave, ExplosiveImpact, Spin, Aftershock,
         RollingFire, Regenerate, Deflect, Steamroller, WreckingBall, Overdrive,
-        QuickDash, DoubleDash, PhaseDash, ReflectDash, Slingshot
+        QuickDash, DoubleDash, PhaseDash, ReflectDash, Slingshot,
+        FirstAid, Vampire, LastStand, GiantHeart
     }
 
     public enum Rarity { Common, Rare, Epic }
@@ -26,6 +27,7 @@ namespace RollItOut
         public Rarity rarity;
         public int maxStacks = 1; // 0 = unlimited; cards only stack when their text says so
         public bool requiresWound;
+        public bool requiresDamage; // only offered while the player is missing health
         public Color color;
         public CardIcon icon;
     }
@@ -38,11 +40,14 @@ namespace RollItOut
         static readonly Color Guard = new Color(0.65f, 0.68f, 0.75f);
         static readonly Color Ball = new Color(1f, 0.85f, 0.25f);
         static readonly Color Dash = new Color(0.6f, 0.9f, 1f);
+        static readonly Color Life = new Color(0.4f, 1f, 0.5f);
 
         static CardDef C(UpgradeType id, string title, string category, Rarity r, string text, Color color, CardIcon icon, int maxStacks = 1, bool requiresWound = false)
         {
             return new CardDef { id = id, title = title, category = category, rarity = r, text = text, color = color, icon = icon, maxStacks = maxStacks, requiresWound = requiresWound };
         }
+
+        static CardDef Hurt(CardDef d) { d.requiresDamage = true; return d; }
 
         static readonly CardDef[] defs =
         {
@@ -87,6 +92,10 @@ namespace RollItOut
             C(UpgradeType.PhaseDash, "PHASE DASH", "Dash", Rarity.Rare, "You can't take damage while dashing.", Dash, CardIcon.Shield),
             C(UpgradeType.ReflectDash, "REFLECT DASH", "Dash", Rarity.Rare, "Dashing into projectiles sends them back to hurt enemies.", Dash, CardIcon.Turn),
             C(UpgradeType.Slingshot, "SLINGSHOT", "Dash", Rarity.Rare, "Wall bounces restart your dash and launch you much farther.", Dash, CardIcon.Dash),
+            Hurt(C(UpgradeType.FirstAid, "FIRST AID", "Health", Rarity.Common, "Heal 2 hearts right now. Only offered when hurt.", Life, CardIcon.Heart, 0)),
+            C(UpgradeType.Vampire, "VAMPIRE", "Health", Rarity.Rare, "Heal 10% of a heart every time an enemy dies.", Bleed, CardIcon.Heart),
+            C(UpgradeType.LastStand, "LAST STAND", "Health", Rarity.Rare, "At 1 heart, deal 30% more damage and move 15% faster.", Bleed, CardIcon.Heart),
+            C(UpgradeType.GiantHeart, "GIANT HEART", "Health", Rarity.Epic, "+2 maximum hearts and heal to full.", Life, CardIcon.Heart),
         };
 
         static CardDef[] byId;
@@ -115,12 +124,16 @@ namespace RollItOut
     {
         public PlayerUpgradeState state;
 
+        PlayerHealth health;
+        PlayerHealth Health => health != null ? health : (health = state.GetComponent<PlayerHealth>());
+
         public int Stacks(UpgradeType t) { return t == UpgradeType.StoneSkin ? state.stoneSkinCharges : state.Count(t); }
 
         bool Eligible(CardDef d)
         {
             if (d.maxStacks > 0 && state.Count(d.id) >= d.maxStacks) return false;
             if (d.requiresWound && !state.Has(UpgradeType.Wound)) return false;
+            if (d.requiresDamage && (Health == null || !Health.Hurt)) return false;
             return true;
         }
 
