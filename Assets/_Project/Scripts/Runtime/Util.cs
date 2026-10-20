@@ -31,7 +31,7 @@ namespace RollItOut
     /// <summary>Procedurally generated sprites so the prototype needs no art assets.</summary>
     public static class SpriteLib
     {
-        static Sprite circle, ring, square, diamond, checker, sand;
+        static Sprite circle, ring, square, diamond, checker, shell, sand;
 
         public static Sprite Circle => circle != null ? circle : (circle = Make(128, (x, y) => Mathf.Clamp01((1f - Mathf.Sqrt(x * x + y * y)) * 24f)));
 
@@ -71,6 +71,41 @@ namespace RollItOut
                         tex.SetPixel(x, y, ((x / 32) + (y / 32)) % 2 == 0 ? a : b);
                 tex.Apply();
                 return checker = Sprite.Create(tex, new Rect(0, 0, 64, 64), new Vector2(0.5f, 0.5f), 32f, 0, SpriteMeshType.FullRect);
+            }
+        }
+
+        /// <summary>Rolled-up armadillo shell: a disc with curved armor bands and staggered scutes, greyscale so it takes a tint.</summary>
+        public static Sprite ArmadilloShell
+        {
+            get
+            {
+                if (shell != null) return shell;
+                const int size = 128;
+                const float band = 0.27f, scute = 0.22f;
+                var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+                for (int y = 0; y < size; y++)
+                    for (int x = 0; x < size; x++)
+                    {
+                        float nx = (x + 0.5f) / size * 2f - 1f;
+                        float ny = (y + 0.5f) / size * 2f - 1f;
+                        float r = Mathf.Sqrt(nx * nx + ny * ny);
+                        float a = Mathf.Clamp01((1f - r) * 24f);
+                        // Bands bow outward like rings around a sphere.
+                        float by = (ny + 1f + 0.3f * nx * nx) / band;
+                        float bandDist = Mathf.Abs(by - Mathf.Round(by)) * band;
+                        float sx = (nx + (Mathf.FloorToInt(by) % 2 == 0 ? 0f : scute * 0.5f)) / scute;
+                        float scuteDist = Mathf.Abs(sx - Mathf.Round(sx)) * scute;
+                        float v = 1f;
+                        if (bandDist < 0.035f) v = 0.5f;
+                        else if (scuteDist < 0.02f) v = 0.78f;
+                        // Rounded shading with a soft highlight up-left.
+                        v *= Mathf.Lerp(1.05f, 0.7f, r * r);
+                        float hl = Mathf.Clamp01(1f - Vector2.Distance(new Vector2(nx, ny), new Vector2(-0.35f, 0.35f)) / 0.55f);
+                        v = Mathf.Clamp01(v + 0.18f * hl);
+                        tex.SetPixel(x, y, new Color(v, v, v, a));
+                    }
+                tex.Apply();
+                return shell = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
             }
         }
 

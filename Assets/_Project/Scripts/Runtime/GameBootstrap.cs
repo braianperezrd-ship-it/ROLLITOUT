@@ -211,16 +211,27 @@ namespace RollItOut
             col.radius = 0.5f;
             col.sharedMaterial = new PhysicsMaterial2D { friction = 0f, bounciness = 0.2f };
 
-            Color ballColor = new Color(1f, 0.78f, 0.2f);
-            var body = SpriteLib.Add(go.transform, "Body", SpriteLib.Circle, ballColor, 10, Vector3.zero, Vector3.one);
-            SpriteLib.Add(go.transform, "Outline", SpriteLib.Ring, new Color(0.08f, 0.05f, 0.02f), 11, Vector3.zero, Vector3.one * 1.04f);
+            // The ball is an armadillo rolled up: banded shell spins with velocity, head and tail poke out toward the move direction.
+            Color ballColor = new Color(0.78f, 0.62f, 0.46f);
+            Color skin = new Color(0.86f, 0.6f, 0.52f);
+            Color ink = new Color(0.08f, 0.05f, 0.02f);
+            var face = Child(go.transform, "Face");
+            // Ink silhouettes under the skin parts so head and tail read on sand too.
+            SpriteLib.Add(face, "TailInk", SpriteLib.Diamond, ink, 7, new Vector3(0f, -0.58f, 0f), new Vector3(0.24f, 0.62f, 1f));
+            SpriteLib.Add(face, "SnoutInk", SpriteLib.Diamond, ink, 7, new Vector3(0f, 0.6f, 0f), new Vector3(0.48f, 0.74f, 1f));
+            SpriteLib.Add(face, "EarLInk", SpriteLib.Circle, ink, 7, new Vector3(-0.2f, 0.53f, 0f), new Vector3(0.22f, 0.3f, 1f));
+            SpriteLib.Add(face, "EarRInk", SpriteLib.Circle, ink, 7, new Vector3(0.2f, 0.53f, 0f), new Vector3(0.22f, 0.3f, 1f));
+            SpriteLib.Add(face, "Tail", SpriteLib.Diamond, skin, 9, new Vector3(0f, -0.58f, 0f), new Vector3(0.16f, 0.5f, 1f));
+            SpriteLib.Add(face, "Snout", SpriteLib.Diamond, skin, 9, new Vector3(0f, 0.6f, 0f), new Vector3(0.38f, 0.6f, 1f));
+            SpriteLib.Add(face, "EarL", SpriteLib.Circle, skin, 9, new Vector3(-0.2f, 0.53f, 0f), new Vector3(0.16f, 0.24f, 1f));
+            SpriteLib.Add(face, "EarR", SpriteLib.Circle, skin, 9, new Vector3(0.2f, 0.53f, 0f), new Vector3(0.16f, 0.24f, 1f));
+            SpriteLib.Add(face, "EyeL", SpriteLib.Circle, ink, 10, new Vector3(-0.08f, 0.66f, 0f), Vector3.one * 0.07f);
+            SpriteLib.Add(face, "EyeR", SpriteLib.Circle, ink, 10, new Vector3(0.08f, 0.66f, 0f), Vector3.one * 0.07f);
+            SpriteLib.Add(face, "Nose", SpriteLib.Circle, ink, 10, new Vector3(0f, 0.87f, 0f), Vector3.one * 0.07f);
 
-            // Stripes + dots rotate with velocity so the rolling reads clearly.
             var roller = Child(go.transform, "Roller");
-            Color dark = new Color(0.75f, 0.4f, 0.05f);
-            SpriteLib.Add(roller, "StripeA", SpriteLib.Square, dark, 12, Vector3.zero, new Vector3(0.14f, 0.8f, 1f));
-            SpriteLib.Add(roller, "StripeB", SpriteLib.Square, dark, 12, Vector3.zero, new Vector3(0.8f, 0.14f, 1f));
-            SpriteLib.Add(roller, "Dot", SpriteLib.Circle, Color.white, 13, new Vector3(0.28f, 0.28f, 0f), Vector3.one * 0.16f);
+            var body = SpriteLib.Add(roller, "Shell", SpriteLib.ArmadilloShell, ballColor, 11, Vector3.zero, Vector3.one);
+            SpriteLib.Add(go.transform, "Outline", SpriteLib.Ring, ink, 12, Vector3.zero, Vector3.one * 1.04f);
 
             var shield = SpriteLib.Add(go.transform, "StoneSkin", SpriteLib.Ring, new Color(0.72f, 0.75f, 0.82f), 9, Vector3.zero, Vector3.one * 1.3f);
 
@@ -230,8 +241,8 @@ namespace RollItOut
             trail.time = 0.25f;
             trail.startWidth = 0.45f;
             trail.endWidth = 0f;
-            trail.startColor = new Color(1f, 0.8f, 0.3f, 0.35f);
-            trail.endColor = new Color(1f, 0.8f, 0.3f, 0f);
+            trail.startColor = new Color(0.85f, 0.7f, 0.5f, 0.35f);
+            trail.endColor = new Color(0.85f, 0.7f, 0.5f, 0f);
             trail.sortingOrder = 8; // below the ball and projectiles
             trail.numCapVertices = 4;
 
@@ -242,6 +253,7 @@ namespace RollItOut
             health.upgrades = state;
             var ctrl = go.AddComponent<PlayerBallController>();
             ctrl.roller = roller;
+            ctrl.face = face;
             ctrl.stoneShield = shield.gameObject;
             go.AddComponent<PlayerCardEffects>(); // before PlayerCollisionDamage, which looks it up in Awake
             go.AddComponent<PlayerCollisionDamage>();
