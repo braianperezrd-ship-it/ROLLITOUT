@@ -30,6 +30,8 @@ namespace RollItOut
         public const float WallSpeedGain = 1.15f, WallSpeedCap = 1.8f;
         /// <summary>Slingshot: bigger speed gain and cap per wall bounce, and the bounce restarts the dash burst.</summary>
         public const float SlingshotSpeedGain = 1.3f, SlingshotSpeedCap = 2.4f;
+        /// <summary>Rebound: a plain roll this close to max speed bounces off walls like a dash does.</summary>
+        public const float ReboundSpeedFraction = 0.85f;
         /// <summary>Each bounce banks a charge: +damage on the next enemy hit, if it lands within the window.</summary>
         public const int MaxWallCharges = 3;
         public const float WallChargeDamage = 0.25f, WallChargeWindow = 2f;
@@ -83,14 +85,16 @@ namespace RollItOut
         {
             if (Time.time < nextWallBounceTime || c.contactCount == 0) return;
             Vector2 pre = ctrl.PreStepVelocity;
-            if (!ctrl.RecentlyDashed) return; // a normal roll into a wall just stops, only a dash bounces
+            // A normal roll into a wall just stops, only a dash bounces (or a fast roll, with Rebound).
+            bool rebound = !ctrl.RecentlyDashed && up.Has(UpgradeType.Rebound) && pre.magnitude >= up.MaxSpeed * ReboundSpeedFraction;
+            if (!ctrl.RecentlyDashed && !rebound) return;
 
             Vector2 n = c.GetContact(0).normal;
             if (Vector2.Dot(pre, n) > 0f) n = -n; // make it face against the incoming roll
             if (Vector2.Dot(pre.normalized, n) > -0.3f) return; // grazing along the wall, not hitting it
 
             nextWallBounceTime = Time.time + WallBounceCooldown;
-            bool sling = up.Has(UpgradeType.Slingshot);
+            bool sling = up.Has(UpgradeType.Slingshot) && !rebound; // Slingshot only relaunches a real dash
             ctrl.WallBounce(pre, n, sling ? SlingshotSpeedGain : WallSpeedGain, up.MaxSpeed * (sling ? SlingshotSpeedCap : WallSpeedCap), sling);
 
             up.wallCharges = up.ActiveWallCharges < MaxWallCharges ? up.ActiveWallCharges + 1 : MaxWallCharges;
