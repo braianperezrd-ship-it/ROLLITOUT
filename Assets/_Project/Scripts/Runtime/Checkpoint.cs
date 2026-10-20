@@ -4,14 +4,14 @@ using UnityEngine;
 namespace RollItOut
 {
     /// <summary>
-    /// One of four numbered pads that must be completed in order. Rolling onto the next one in the
+    /// One of six numbered pads that must be completed in order. Rolling onto the next one in the
     /// sequence completes it: it pays out a card reward and becomes the respawn point. Pads further
     /// along stay locked until the ones before them are done. Dying with a completed checkpoint brings
     /// the ball back there at full health; each checkpoint saves you once.
     /// </summary>
     public class Checkpoint : MonoBehaviour
     {
-        public const int Count = 4;
+        public const int Count = 6;
         public const float TouchRadius = 0.9f;
         const float LockedWarnCooldown = 2.5f;
 
@@ -38,7 +38,7 @@ namespace RollItOut
         float pulse;
         static float lockedWarnUntil;
 
-        /// <summary>Lays the four pads out as a zigzag across the arena, so the route crosses the whole map whatever its size.</summary>
+        /// <summary>Lays the pads out as a zigzag across the arena, so the route crosses the whole map whatever its size.</summary>
         public static void BuildAll(Transform parent, Vector2 arenaHalf, Transform player, RoundManager round)
         {
             All.Clear();
