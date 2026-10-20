@@ -64,11 +64,11 @@ Upgrade cards are data in `CardDefs` (`UpgradeManager.cs`): name, category, rari
 are read in `PlayerUpgradeState`; on-hit, on-kill and trail cards run in `PlayerCardEffects`. Rewards are weighted by
 rarity (Common 6 : Rare 3 : Epic 1) and never repeat a card within one offer.
 
-There are 46 cards. The design doc's five XP / elite utility cards (Magnet, Greed, Vacuum, Lucky, Treasure Hunter) wait
+There are 47 cards. The design doc's five XP / elite utility cards (Magnet, Greed, Vacuum, Lucky, Treasure Hunter) wait
 for those systems; their slots hold Regenerate (healing), Deflect, Steamroller (crush), Wrecking Ball (Collision epic) and
 Overdrive (Movement epic). Four Dash cards build on the dash: Quick Dash (-15% recharge, max 3), Double Dash (store 2
 dashes), Phase Dash (no damage for 0.5 s after a dash) and Reflect Dash (for 0.5 s after a dash, a projectile that hits you is sent back for 15 damage to the
-enemy it hits), plus Slingshot (wall bounces gain +30% speed up to 2.4x max speed and restart the dash burst), and Rebound (Collision rare: a plain roll at 85%+ of max speed bounces off walls like a dash and banks a charge). Four Health cards: First Aid (common, heal 2 hearts on pick, only
+enemy it hits), plus Slingshot (wall bounces gain +30% speed up to 2.4x max speed and restart the dash burst), and Rebound (Collision rare: a plain roll at 85%+ of max speed bounces off walls like a dash and banks a charge) and Pinball (Collision rare: a crash shoots you at max speed into the nearest other enemy within 6 units, up to 4 in a row). Four Health cards: First Aid (common, heal 2 hearts on pick, only
 offered when hurt), Vampire (heal 10% of a heart per enemy death), Last Stand (at 1 heart: +30% damage, +15% speed) and
 Giant Heart (epic, +2 max hearts and full heal). Stacking stat cards have caps (Speed 5, Heavy Ball 5, Big Ball 4, Wound 4) so long runs stay
 controllable. Trail zones of one kind (Dust Trail, Rolling Fire, Blood Trail, Aftershock) don't stack on the same enemy,

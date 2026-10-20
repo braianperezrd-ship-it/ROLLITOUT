@@ -11,7 +11,7 @@ namespace RollItOut
         Rush, Crusher, Impact, Boulder, ChainImpact, Ricochet, DeepWound, SpreadingWound, OpenWound, BloodTrail,
         IronShell, ReinforcedCore, SecondChance, Hardened, SafeRoll, DustTrail, Shockwave, ExplosiveImpact, Spin, Aftershock,
         RollingFire, Regenerate, Deflect, Steamroller, WreckingBall, Overdrive,
-        QuickDash, DoubleDash, PhaseDash, ReflectDash, Slingshot, Rebound,
+        QuickDash, DoubleDash, PhaseDash, ReflectDash, Slingshot, Rebound, Pinball,
         FirstAid, Vampire, LastStand, GiantHeart
     }
 
@@ -93,6 +93,7 @@ namespace RollItOut
             C(UpgradeType.ReflectDash, "REFLECT DASH", "Dash", Rarity.Rare, "Dashing into projectiles sends them back to hurt enemies.", Dash, CardIcon.Turn),
             C(UpgradeType.Slingshot, "SLINGSHOT", "Dash", Rarity.Rare, "Wall bounces restart your dash and launch you much farther.", Dash, CardIcon.Dash),
             C(UpgradeType.Rebound, "REBOUND", "Collision", Rarity.Rare, "Rolling into a wall at full speed bounces you off it, no dash needed.", Crash, CardIcon.Turn),
+            C(UpgradeType.Pinball, "PINBALL", "Collision", Rarity.Rare, "Crashing into an enemy bounces you into the nearest other one. Up to 4 in a row.", Crash, CardIcon.Turn),
             Hurt(C(UpgradeType.FirstAid, "FIRST AID", "Health", Rarity.Common, "Heal 2 hearts right now. Only offered when hurt.", Life, CardIcon.Heart, 0)),
             C(UpgradeType.Vampire, "VAMPIRE", "Health", Rarity.Rare, "Heal 10% of a heart every time an enemy dies.", Bleed, CardIcon.Heart),
             C(UpgradeType.LastStand, "LAST STAND", "Health", Rarity.Rare, "At 1 heart, deal 30% more damage and move 15% faster.", Bleed, CardIcon.Heart),

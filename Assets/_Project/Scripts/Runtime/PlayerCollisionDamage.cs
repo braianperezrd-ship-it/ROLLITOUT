@@ -36,8 +36,13 @@ namespace RollItOut
         public const int MaxWallCharges = 3;
         public const float WallChargeDamage = 0.25f, WallChargeWindow = 2f;
         const float WallBounceCooldown = 0.1f;
+        /// <summary>Pinball: how far a crash looks for the next enemy, and how many bounces chain before it stops.</summary>
+        public const float PinballRange = 6f, PinballChainWindow = 1f;
+        public const int PinballMaxChain = 4;
 
         float nextWallBounceTime;
+        int pinballChain;
+        float pinballUntil = -1f;
 
         PlayerBallController ctrl;
         PlayerUpgradeState up;
@@ -167,10 +172,42 @@ namespace RollItOut
             float recoil = Mathf.Clamp(impact * 0.3f, 1.5f, 3.5f) * Mathf.Lerp(1f, 1.6f, heavy);
             if (up.Has(UpgradeType.Ricochet)) recoil *= 1.3f;
             Vector2 sideways = pre - dir * Vector2.Dot(pre, dir);
-            ctrl.SetVelocity(-dir * recoil + sideways * 0.8f);
+            if (!PinballBounce(e, impact)) ctrl.SetVelocity(-dir * recoil + sideways * 0.8f);
 
             if (impact > 7.5f) CameraShake.Shake(0.12f, 0.12f);
             if (effects != null) effects.OnEnemyHit(e, impact);
+        }
+
+        /// <summary>
+        /// Pinball: instead of recoiling, the ball shoots off the enemy it just crashed into toward the nearest other
+        /// enemy, at no less than max speed, so it can ping between them. Chains stop after PinballMaxChain bounces.
+        /// </summary>
+        bool PinballBounce(EnemyController hit, float impact)
+        {
+            if (!up.Has(UpgradeType.Pinball) || effects == null || effects.round == null) return false;
+            if (Time.time >= pinballUntil) pinballChain = 0;
+            if (pinballChain >= PinballMaxChain) return false;
+
+            Vector2 pos = transform.position;
+            Vector2 back = ((Vector2)hit.transform.position - pos).normalized;
+            EnemyController best = null;
+            float bestD = PinballRange;
+            foreach (var o in effects.round.Alive)
+            {
+                if (o == hit || o.Dead || !o.Active) continue;
+                Vector2 off = (Vector2)o.transform.position - pos;
+                if (Vector2.Dot(off.normalized, back) > 0.5f) continue; // behind the enemy just hit, would plough back into it
+                float d = off.magnitude;
+                if (d < bestD) { bestD = d; best = o; }
+            }
+            if (best == null) return false;
+
+            pinballChain++;
+            pinballUntil = Time.time + PinballChainWindow;
+            Vector2 to = ((Vector2)best.transform.position - pos).normalized;
+            ctrl.SetVelocity(to * Mathf.Max(impact, up.MaxSpeed));
+            Fx.Burst(pos, new Color(1f, 0.8f, 0.3f), 6 + 2 * pinballChain, 6f, 0.14f, 0.3f);
+            return true;
         }
 
         void Crush(EnemyController e, Vector2 pre, float damage)
