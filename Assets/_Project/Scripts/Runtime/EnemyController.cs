@@ -68,6 +68,7 @@ namespace RollItOut
         SpriteRenderer telegraphSr;
         float hp, maxHp, spawnTimer, spawnTotal, flashTimer, woundLeft, woundTick, woundDps, zoneDamage, zoneTimer, bloodTimer, flatTimer;
         bool crushedToDeath;
+        readonly int[] zoneFrame = { -1, -1, -1, -1 };
         Vector2 crushDir = Vector2.right;
         Vector2 knockVel;
         bool telegraphing;
@@ -171,7 +172,7 @@ namespace RollItOut
                 if (bloodTimer <= 0f && round.PlayerUpgrades.Has(UpgradeType.BloodTrail) && rb.GetVel().sqrMagnitude > 0.25f)
                 {
                     bloodTimer = 0.3f;
-                    DamageZone.Spawn(round, transform.position, 0.45f, 6f, 1.5f, new Color(0.7f, 0.05f, 0.1f, 0.45f));
+                    DamageZone.Spawn(round, ZoneKind.Blood, transform.position, 0.45f, 8f, 1.5f, new Color(0.7f, 0.05f, 0.1f, 0.45f), this);
                 }
             }
 
@@ -278,7 +279,7 @@ namespace RollItOut
                 }
             }
 
-            if (Wounded && round.PlayerUpgrades.Has(UpgradeType.OpenWound)) desired *= 0.85f;
+            if (Wounded && round.PlayerUpgrades.Has(UpgradeType.OpenWound)) desired *= 0.8f;
             rb.SetVel(desired + knockVel);
             DecayKnock();
         }
@@ -323,11 +324,23 @@ namespace RollItOut
             Damage(amount);
         }
 
+        /// <summary>
+        /// Overlapping zones of one kind (a trail is many zones) hurt like a single zone: only the first to
+        /// reach us each frame deals damage.
+        /// </summary>
+        public bool ClaimZoneTick(ZoneKind kind)
+        {
+            int f = Time.frameCount;
+            if (zoneFrame[(int)kind] == f) return false;
+            zoneFrame[(int)kind] = f;
+            return true;
+        }
+
         /// <summary>The ball rolled over us: flatten, take the hit, and splat if it was lethal. Returns true if it killed.</summary>
-        public bool Crush(float damage, Vector2 dir)
+        public bool Crush(float damage, Vector2 dir, float flatTime)
         {
             if (Dead) return false;
-            flatTimer = FlatDuration;
+            flatTimer = flatTime;
             crushDir = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector2.right;
             flashTimer = HitFlashTime;
             if (telegraphing)

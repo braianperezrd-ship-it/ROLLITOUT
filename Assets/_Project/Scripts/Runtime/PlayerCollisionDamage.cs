@@ -5,7 +5,8 @@ namespace RollItOut
 {
     /// <summary>
     /// Ball-to-enemy damage. Enemies no bigger than the ball get crushed: the ball rolls over them, they go flat,
-    /// and a lethal crush leaves a splat. Bigger enemies still take a crash with knockback and recoil.
+    /// and a lethal crush leaves a splat (crushable size: PlayerUpgradeState.CrushSizeRatio). Bigger enemies still take
+    /// a crash with knockback and recoil, unless Wrecking Ball ploughs through them at full speed.
     /// Enemy contact never hurts the player.
     /// </summary>
     [RequireComponent(typeof(PlayerBallController))]
@@ -16,9 +17,9 @@ namespace RollItOut
         public const float MinImpactSpeed = 2f;
         /// <summary>Below this speed the ball can't climb over an enemy, it just bumps it.</summary>
         public const float MinCrushSpeed = 3.5f;
-        /// <summary>Enemies up to this size relative to the ball's diameter can be rolled over.</summary>
-        public const float CrushSizeRatio = 1.05f;
         public const float CrushDamageMultiplier = 1.5f;
+        /// <summary>Wrecking Ball: fraction of max speed needed to plough through an enemy too big to crush.</summary>
+        public const float WreckSpeedFraction = 0.9f;
         /// <summary>Fraction of speed kept after rolling over an enemy (a small bump, not a stop).</summary>
         public const float CrushSpeedKeep = 0.9f;
 
@@ -76,18 +77,30 @@ namespace RollItOut
                 bonus += 0.5f;
                 Fx.Burst(e.transform.position, new Color(1f, 0.9f, 0.5f), 10, 7f, 0.2f, 0.35f);
             }
-            if (up.Has(UpgradeType.ChainImpact) && Time.time < up.chainUntil) bonus += 0.2f;
+            bonus += up.ChainBonus;
             up.impactArmed = false;
             if (up.WoundDuration > 0f) e.ApplyWound(up.WoundDuration, up.WoundDamagePerSecond);
 
-            if (impact >= MinCrushSpeed && e.Def.size <= up.SizeScale * CrushSizeRatio)
+            if (impact >= MinCrushSpeed && e.Def.size <= up.SizeScale * up.CrushSizeRatio)
             {
-                Crush(e, pre, up.CollisionDamage * bonus * CrushDamageMultiplier);
+                Crush(e, pre, up.CollisionDamage * bonus * CrushDamageMultiplier * up.CrushDamageMultiplier);
                 if (effects != null) effects.OnEnemyHit(e, impact);
                 return;
             }
 
-            e.TakeHit(up.CollisionDamage * bonus, dir, impact, up.KnockbackMultiplier);
+            if (up.Has(UpgradeType.WreckingBall) && impact >= up.MaxSpeed * WreckSpeedFraction)
+            {
+                // Plough straight through: full knockback for the enemy, no bounce for the ball.
+                e.TakeHit(up.CollisionDamage * bonus, dir, impact, 1f);
+                PassThrough(e);
+                ctrl.SetVelocity(pre * CrushSpeedKeep);
+                HitStop.Freeze(0.04f);
+                CameraShake.Shake(0.16f, 0.14f);
+                if (effects != null) effects.OnEnemyHit(e, impact);
+                return;
+            }
+
+            e.TakeHit(up.CollisionDamage * bonus, dir, impact, 1f);
 
             // Small controlled bounce: reverse a fraction of the impact, keep some sideways motion.
             float heavy = Mathf.Clamp01((e.Def.knockbackResistance - 1f) / 4f);
@@ -103,15 +116,21 @@ namespace RollItOut
         void Crush(EnemyController e, Vector2 pre, float damage)
         {
             // Let the ball roll straight over the enemy and keep (most of) its momentum.
-            Physics2D.IgnoreCollision(col, e.Collider, true);
-            if (!passingOver.Contains(e)) passingOver.Add(e);
+            PassThrough(e);
             ctrl.SetVelocity(pre * CrushSpeedKeep);
 
-            bool killed = e.Crush(damage, pre);
+            bool killed = e.Crush(damage, pre, EnemyController.FlatDuration * up.CrushFlatMultiplier);
 
             HitStop.Freeze(killed ? 0.08f : 0.045f);
             CameraShake.Shake(killed ? 0.2f : 0.12f, killed ? 0.16f : 0.1f);
             ctrl.Squash();
+        }
+
+        /// <summary>Turns off ball-enemy collision until the ball has fully rolled clear (see FixedUpdate).</summary>
+        void PassThrough(EnemyController e)
+        {
+            Physics2D.IgnoreCollision(col, e.Collider, true);
+            if (!passingOver.Contains(e)) passingOver.Add(e);
         }
     }
 }

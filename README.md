@@ -55,3 +55,9 @@ script (`PlayerBallController`, `PlayerCollisionDamage` (crush thresholds), `Pla
 Upgrade cards are data in `CardDefs` (`UpgradeManager.cs`): name, category, rarity, text, stack limit and icon. Stat cards
 are read in `PlayerUpgradeState`; on-hit, on-kill and trail cards run in `PlayerCardEffects`. Rewards are weighted by
 rarity (Common 6 : Rare 3 : Epic 1) and never repeat a card within one offer.
+
+There are 36 cards. The design doc's five XP / elite utility cards (Magnet, Greed, Vacuum, Lucky, Treasure Hunter) wait
+for those systems; their slots hold Regenerate (healing), Deflect, Steamroller (crush), Wrecking Ball (Collision epic) and
+Overdrive (Movement epic). Stacking stat cards have caps (Speed 5, Heavy Ball 5, Big Ball 4, Wound 4) so long runs stay
+controllable. Trail zones of one kind (Dust Trail, Rolling Fire, Blood Trail, Aftershock) don't stack on the same enemy,
+so a trail deals the damage per second it says.

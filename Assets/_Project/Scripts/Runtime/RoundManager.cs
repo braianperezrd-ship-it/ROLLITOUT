@@ -70,6 +70,7 @@ namespace RollItOut
             ball.SetVelocity(Vector2.zero); // each round starts at rest
             ball.controlEnabled = true;
             health.OnRoundStart();
+            PlayerUpgrades.OnRoundStart();
 
             Banner = "ROUND " + n;
             BannerSub = n == 1 ? "Every enemy can shoot - watch the telegraphs!"
@@ -141,6 +142,7 @@ namespace RollItOut
             State = GameState.Clearing;
             clearTimer = ClearDelay;
             ClearProjectiles(); // nothing may hurt the player between clear and the reward screen
+            if (PlayerUpgrades.Has(UpgradeType.Regenerate)) health.Heal(1);
         }
 
         /// <summary>Also clears card damage zones, which live under the projectile parent.</summary>
