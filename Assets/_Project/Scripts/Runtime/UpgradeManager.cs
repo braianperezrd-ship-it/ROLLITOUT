@@ -10,12 +10,13 @@ namespace RollItOut
         Speed, BigBall, HeavyBall, Wound, StoneSkin, Resistance, QuickStart, Momentum, Agile, RollingFury,
         Rush, Crusher, Impact, Boulder, ChainImpact, Ricochet, DeepWound, SpreadingWound, OpenWound, BloodTrail,
         IronShell, ReinforcedCore, SecondChance, Hardened, SafeRoll, DustTrail, Shockwave, ExplosiveImpact, Spin, Aftershock,
-        RollingFire, Regenerate, Deflect, Steamroller, WreckingBall, Overdrive
+        RollingFire, Regenerate, Deflect, Steamroller, WreckingBall, Overdrive,
+        QuickDash, DoubleDash, PhaseDash, ReflectDash
     }
 
     public enum Rarity { Common, Rare, Epic }
 
-    public enum CardIcon { Lines, Grow, Heavy, Drops, Shield, Bar, Chevron, Wave, Turn, Burst, Heart, Trail, Pulse }
+    public enum CardIcon { Lines, Grow, Heavy, Drops, Shield, Bar, Chevron, Wave, Turn, Burst, Heart, Trail, Pulse, Dash }
 
     /// <summary>One upgrade card: pure data. Gameplay reads stack counts from PlayerUpgradeState.</summary>
     public class CardDef
@@ -36,6 +37,7 @@ namespace RollItOut
         static readonly Color Bleed = new Color(0.9f, 0.2f, 0.3f);
         static readonly Color Guard = new Color(0.65f, 0.68f, 0.75f);
         static readonly Color Ball = new Color(1f, 0.85f, 0.25f);
+        static readonly Color Dash = new Color(0.6f, 0.9f, 1f);
 
         static CardDef C(UpgradeType id, string title, string category, Rarity r, string text, Color color, CardIcon icon, int maxStacks = 1, bool requiresWound = false)
         {
@@ -80,6 +82,10 @@ namespace RollItOut
             C(UpgradeType.Steamroller, "STEAMROLLER", "Collision", Rarity.Rare, "Crush enemies up to 30% bigger than your ball.", Crash, CardIcon.Grow),
             C(UpgradeType.WreckingBall, "WRECKING BALL", "Collision", Rarity.Epic, "At full speed, smash through big enemies without bouncing.", Crash, CardIcon.Heavy),
             C(UpgradeType.Overdrive, "OVERDRIVE", "Movement", Rarity.Epic, "Each kill this round: +2% speed and damage, up to +30%.", Move, CardIcon.Lines),
+            C(UpgradeType.QuickDash, "QUICK DASH", "Dash", Rarity.Common, "Dash recharges 15% faster. Max 3.", Dash, CardIcon.Dash, 3),
+            C(UpgradeType.DoubleDash, "DOUBLE DASH", "Dash", Rarity.Rare, "Store 2 dashes and chain them back to back.", Dash, CardIcon.Dash),
+            C(UpgradeType.PhaseDash, "PHASE DASH", "Dash", Rarity.Rare, "You can't take damage while dashing.", Dash, CardIcon.Shield),
+            C(UpgradeType.ReflectDash, "REFLECT DASH", "Dash", Rarity.Rare, "Dashing into projectiles sends them back to hurt enemies.", Dash, CardIcon.Turn),
         };
 
         static CardDef[] byId;

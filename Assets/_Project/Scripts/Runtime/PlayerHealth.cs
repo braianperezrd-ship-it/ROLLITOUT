@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace RollItOut
 {
-    public enum HitResult { Ignored, Blocked, Damaged }
+    public enum HitResult { Ignored, Blocked, Damaged, Reflected }
 
     /// <summary>
     /// 3 hearts (+Iron Shell) backed by a damage meter (100 units = 1 heart) so damage reduction never rounds away.
@@ -57,6 +57,14 @@ namespace RollItOut
         public HitResult TakeProjectileHit(float projectileDamage, Vector2 hitPos)
         {
             if (Dead) return HitResult.Ignored;
+
+            bool dashing = ctrl != null && ctrl.RecentlyDashed;
+            if (dashing && upgrades.Has(UpgradeType.ReflectDash))
+            {
+                Fx.Burst(hitPos, new Color(0.6f, 0.9f, 1f), 10, 6f, 0.14f, 0.3f);
+                return HitResult.Reflected;
+            }
+            if (dashing && upgrades.Has(UpgradeType.PhaseDash)) return HitResult.Ignored;
 
             if (upgrades.Has(UpgradeType.Deflect) && ctrl != null && ctrl.PreStepVelocity.magnitude >= upgrades.MaxSpeed * DeflectSpeedFraction)
             {

@@ -6,12 +6,15 @@ namespace RollItOut
     public class Projectile : MonoBehaviour
     {
         public const float Damage = 1f;
+        /// <summary>Reflect Dash: damage a sent-back shot deals to the enemy it hits, and its speed boost.</summary>
+        public const float ReflectedDamage = 15f, ReflectSpeedMultiplier = 1.4f;
 
         Rigidbody2D rb;
         Vector2 dir;
         float speed, life = 7f;
         Transform target;
         float turnRate, homingLeft;
+        bool reflected; // sent back by Reflect Dash: hurts enemies, ignores the player
 
         public static Projectile Spawn(Vector2 pos, Vector2 dir, float speed, Color color, Transform parent, float size = 1f)
         {
@@ -63,16 +66,43 @@ namespace RollItOut
             if (life <= 0f) Destroy(gameObject);
         }
 
+        /// <summary>Reflect Dash: fly back the way it came, faster, no longer homing.</summary>
+        void Reflect()
+        {
+            reflected = true;
+            dir = -dir;
+            speed *= ReflectSpeedMultiplier;
+            homingLeft = 0f;
+            life = 3f;
+            transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+            foreach (var sr in GetComponentsInChildren<SpriteRenderer>())
+                if (sr.name == "Core" || sr.name == "Glow") sr.color = new Color(0.6f, 0.9f, 1f, sr.name == "Glow" ? 0.3f : 1f);
+        }
+
         void OnTriggerEnter2D(Collider2D o) { Resolve(o); }
         void OnTriggerStay2D(Collider2D o) { Resolve(o); }
 
         void Resolve(Collider2D o)
         {
+            if (reflected)
+            {
+                var e = o.GetComponentInParent<EnemyController>();
+                if (e != null && !e.Dead && e.Active)
+                {
+                    e.TakeAreaDamage(ReflectedDamage, transform.position, 4f);
+                    Fx.Burst(transform.position, new Color(0.6f, 0.9f, 1f), 8, 5f, 0.14f, 0.3f);
+                    Destroy(gameObject);
+                    return;
+                }
+            }
             var hp = o.GetComponent<PlayerHealth>();
             if (hp != null)
             {
-                // Ignored hits (i-frames) pass through; blocked or damaging hits destroy the projectile.
-                if (hp.TakeProjectileHit(Damage, transform.position) != HitResult.Ignored) Destroy(gameObject);
+                if (reflected) return;
+                // Ignored hits (i-frames) pass through; reflected ones turn around; blocked or damaging hits destroy it.
+                var result = hp.TakeProjectileHit(Damage, transform.position);
+                if (result == HitResult.Reflected) Reflect();
+                else if (result != HitResult.Ignored) Destroy(gameObject);
                 return;
             }
             if (o.GetComponent<ArenaWall>() != null) Destroy(gameObject);
