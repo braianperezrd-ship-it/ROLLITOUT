@@ -8,10 +8,12 @@ namespace RollItOut
         public const float Damage = 1f;
         /// <summary>Reflect Dash: damage a sent-back shot deals to the enemy it hits, and its speed boost.</summary>
         public const float ReflectedDamage = 15f, ReflectSpeedMultiplier = 1.4f;
+        /// <summary>Seconds an enemy shot lives after being fired (halved from 7s so the crowded screen clears faster).</summary>
+        public const float Lifetime = 3.5f;
 
         Rigidbody2D rb;
         Vector2 dir;
-        float speed, life = 7f;
+        float speed, life = Lifetime;
         Transform target;
         float turnRate, homingLeft;
         bool reflected; // sent back by Reflect Dash: hurts enemies, ignores the player
