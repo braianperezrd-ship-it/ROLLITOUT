@@ -17,6 +17,10 @@ namespace RollItOut
         PlayerUpgradeState up;
         Vector2 input;
         float dustTimer;
+        float squashTimer;
+        Transform[] visuals;
+        Vector3[] visualScales;
+        const float SquashTime = 0.18f;
 
         /// <summary>Velocity we set before the last physics step; the true speed at impact.</summary>
         public Vector2 PreStepVelocity { get; private set; }
@@ -27,11 +31,32 @@ namespace RollItOut
             up = GetComponent<PlayerUpgradeState>();
         }
 
+        void Start()
+        {
+            // Sprite children only (not the collider's transform), so the squash never changes physics.
+            var list = new System.Collections.Generic.List<Transform>();
+            foreach (Transform t in transform) list.Add(t);
+            visuals = list.ToArray();
+            visualScales = new Vector3[visuals.Length];
+            for (int i = 0; i < visuals.Length; i++) visualScales[i] = visuals[i].localScale;
+        }
+
+        /// <summary>Brief bulge of the ball's sprites when it lands on something it crushed.</summary>
+        public void Squash() { squashTimer = SquashTime; }
+
         void Update()
         {
             input = controlEnabled ? InputReader.Move() : Vector2.zero;
             transform.localScale = Vector3.one * up.SizeScale;
             if (stoneShield != null) stoneShield.SetActive(up.stoneSkinCharges > 0);
+
+            if (squashTimer > 0f && visuals != null)
+            {
+                squashTimer -= Time.unscaledDeltaTime; // keeps animating through hit-stop
+                float k = Mathf.Clamp01(squashTimer / SquashTime);
+                float bulge = 1f + 0.22f * Mathf.Sin(k * Mathf.PI);
+                for (int i = 0; i < visuals.Length; i++) visuals[i].localScale = visualScales[i] * bulge;
+            }
 
             Vector2 v = rb.GetVel();
             float speed = v.magnitude;

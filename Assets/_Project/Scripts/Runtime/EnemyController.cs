@@ -52,6 +52,8 @@ namespace RollItOut
         public bool Wounded => woundLeft > 0f;
         public float Radius => Def.size * 0.5f;
         public float nextCollisionHitTime;
+        public CircleCollider2D Collider => col;
+        public const float FlatDuration = 0.9f;
 
         RoundManager round;
         Transform player;
@@ -59,9 +61,11 @@ namespace RollItOut
         Rigidbody2D rb;
         CircleCollider2D col;
         SpriteRenderer body;
-        Transform hpFill, telegraph;
+        Transform vis, hpFill, telegraph;
         SpriteRenderer telegraphSr;
-        float hp, maxHp, spawnTimer, spawnTotal, flashTimer, woundLeft, woundTick, woundDps, bloodTimer;
+        float hp, maxHp, spawnTimer, spawnTotal, flashTimer, woundLeft, woundTick, woundDps, bloodTimer, flatTimer;
+        bool crushedToDeath;
+        Vector2 crushDir = Vector2.right;
         Vector2 knockVel;
         bool telegraphing;
         float stateTimer, strafeSign = 1f;
@@ -89,19 +93,22 @@ namespace RollItOut
             col.enabled = spawnDelay <= 0f;
 
             float s = def.size;
-            body = SpriteLib.Add(transform, "Body", SpriteLib.Circle, baseColor, 5, Vector3.zero, Vector3.one * s);
-            SpriteLib.Add(transform, "Outline", SpriteLib.Ring, new Color(0.05f, 0.04f, 0.08f), 6, Vector3.zero, Vector3.one * s * 1.04f);
+            // Body parts live under one child so a crush can squash them without touching the collider or HP bar.
+            vis = new GameObject("Visual").transform;
+            vis.SetParent(transform, false);
+            body = SpriteLib.Add(vis, "Body", SpriteLib.Circle, baseColor, 5, Vector3.zero, Vector3.one * s);
+            SpriteLib.Add(vis, "Outline", SpriteLib.Ring, new Color(0.05f, 0.04f, 0.08f), 6, Vector3.zero, Vector3.one * s * 1.04f);
             Color eye = def.type == EnemyType.Orc ? new Color(1f, 0.2f, 0.1f) : new Color(0.08f, 0.06f, 0.1f);
-            SpriteLib.Add(transform, "EyeL", SpriteLib.Circle, eye, 7, new Vector3(-0.17f, 0.12f, 0f) * s, Vector3.one * 0.17f * s);
-            SpriteLib.Add(transform, "EyeR", SpriteLib.Circle, eye, 7, new Vector3(0.17f, 0.12f, 0f) * s, Vector3.one * 0.17f * s);
+            SpriteLib.Add(vis, "EyeL", SpriteLib.Circle, eye, 7, new Vector3(-0.17f, 0.12f, 0f) * s, Vector3.one * 0.17f * s);
+            SpriteLib.Add(vis, "EyeR", SpriteLib.Circle, eye, 7, new Vector3(0.17f, 0.12f, 0f) * s, Vector3.one * 0.17f * s);
             if (def.behavior == EnemyBehavior.Archer)
-                SpriteLib.Add(transform, "Bow", SpriteLib.Ring, def.projectileColor, 7, Vector3.zero, Vector3.one * s * 0.55f);
+                SpriteLib.Add(vis, "Bow", SpriteLib.Ring, def.projectileColor, 7, Vector3.zero, Vector3.one * s * 0.55f);
             if (def.behavior == EnemyBehavior.Shaman)
-                SpriteLib.Add(transform, "Aura", SpriteLib.Ring, def.projectileColor, 4, Vector3.zero, Vector3.one * s * 1.35f);
+                SpriteLib.Add(vis, "Aura", SpriteLib.Ring, def.projectileColor, 4, Vector3.zero, Vector3.one * s * 1.35f);
             if (def.type == EnemyType.Goblin)
             {
-                SpriteLib.Add(transform, "EarL", SpriteLib.Diamond, baseColor, 4, new Vector3(-0.5f, 0.1f, 0f) * s, new Vector3(0.45f, 0.3f, 1f) * s);
-                SpriteLib.Add(transform, "EarR", SpriteLib.Diamond, baseColor, 4, new Vector3(0.5f, 0.1f, 0f) * s, new Vector3(0.45f, 0.3f, 1f) * s);
+                SpriteLib.Add(vis, "EarL", SpriteLib.Diamond, baseColor, 4, new Vector3(-0.5f, 0.1f, 0f) * s, new Vector3(0.45f, 0.3f, 1f) * s);
+                SpriteLib.Add(vis, "EarR", SpriteLib.Diamond, baseColor, 4, new Vector3(0.5f, 0.1f, 0f) * s, new Vector3(0.45f, 0.3f, 1f) * s);
             }
 
             // HP bar (always above the body, never rotates).
@@ -162,6 +169,14 @@ namespace RollItOut
             if (flashTimer > 0f) { flashTimer -= dt; body.color = Color.white; }
             else body.color = woundLeft > 0f ? Color.Lerp(baseColor, new Color(0.85f, 0.1f, 0.15f), 0.4f) : baseColor;
 
+            if (flatTimer > 0f)
+            {
+                flatTimer -= dt;
+                UpdateFlatVisual();
+                body.color = Color.Lerp(body.color, Color.black, 0.25f);
+                return; // pancakes don't shoot
+            }
+
             if (Def.telegraph > 0f && player != null) UpdateRanged(dt);
         }
 
@@ -206,7 +221,7 @@ namespace RollItOut
         void FixedUpdate()
         {
             if (Dead) return;
-            if (spawnTimer > 0f || player == null) { rb.SetVel(knockVel); DecayKnock(); return; }
+            if (spawnTimer > 0f || player == null || flatTimer > 0f) { rb.SetVel(knockVel); DecayKnock(); return; }
 
             Vector2 toP = player.position - transform.position;
             float dist = toP.magnitude;
@@ -291,6 +306,50 @@ namespace RollItOut
             Damage(amount);
         }
 
+        /// <summary>The ball rolled over us: flatten, take the hit, and splat if it was lethal. Returns true if it killed.</summary>
+        public bool Crush(float damage, Vector2 dir)
+        {
+            if (Dead) return false;
+            flatTimer = FlatDuration;
+            crushDir = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector2.right;
+            flashTimer = 0.06f;
+            if (telegraphing)
+            {
+                telegraphing = false;
+                if (telegraph != null) telegraph.gameObject.SetActive(false);
+                stateTimer = Def.telegraph; // getting crushed resets the wind-up
+            }
+            knockVel = crushDir * 1.5f / Def.knockbackResistance; // pressed into the floor, barely slides
+            UpdateFlatVisual();
+            Fx.Burst(transform.position, Def.color, 8, 6f, 0.14f, 0.3f);
+            crushedToDeath = true;
+            Damage(damage);
+            crushedToDeath = false;
+            return Dead;
+        }
+
+        void UpdateFlatVisual()
+        {
+            // Flat pancake stretched across the roll direction, then a springy pop back in the last quarter.
+            float ang = Mathf.Atan2(crushDir.y, crushDir.x) * Mathf.Rad2Deg + 90f;
+            float k = Mathf.Clamp01(flatTimer / FlatDuration);
+            Vector3 flat = new Vector3(1.5f, 0.3f, 1f);
+            if (k > 0.25f)
+            {
+                float wobble = 1f + 0.06f * Mathf.Sin(Time.time * 40f) * (k - 0.25f);
+                vis.localScale = new Vector3(flat.x * wobble, flat.y, 1f);
+                vis.localRotation = Quaternion.Euler(0f, 0f, ang);
+            }
+            else
+            {
+                float t = 1f - k / 0.25f;
+                float back = 1f + 2.2f * Mathf.Pow(t - 1f, 3f) + 1.2f * Mathf.Pow(t - 1f, 2f); // ease-out-back
+                vis.localScale = new Vector3(Mathf.LerpUnclamped(flat.x, 1f, back), Mathf.LerpUnclamped(flat.y, 1f, back), 1f);
+                vis.localRotation = Quaternion.Euler(0f, 0f, ang * (1f - t));
+            }
+            if (flatTimer <= 0f) { vis.localScale = Vector3.one; vis.localRotation = Quaternion.identity; }
+        }
+
         void Damage(float amount)
         {
             hp -= amount;
@@ -306,7 +365,8 @@ namespace RollItOut
             Dead = true;
             col.enabled = false;
             rb.simulated = false;
-            Fx.Burst(transform.position, Def.color, 12, 6f, 0.2f, 0.5f);
+            if (crushedToDeath) Splat.Create(transform.position, Def.color, Def.size, crushDir);
+            else Fx.Burst(transform.position, Def.color, 12, 6f, 0.2f, 0.5f);
             // Spawn children first so the round can never read as cleared mid-split.
             if (Def.splitCount > 0)
                 for (int i = 0; i < Def.splitCount; i++)

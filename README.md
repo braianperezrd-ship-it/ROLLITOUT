@@ -44,11 +44,13 @@ Open `Assets/_Project/Scenes/Main.unity` (or any scene) and press **Play**. `Gam
 player, enemies and UI at runtime, so there is no scene wiring or art to import.
 
 - **Move:** WASD / arrow keys / gamepad left stick. There is no attack button: crash into enemies.
+- **Crush:** roll fast over an enemy no bigger than your ball and you flatten it: you keep your momentum, it can't move
+  or shoot for a moment, and a lethal crush leaves a splat. Bigger enemies (Orc, and Slime until you take Big Ball) still bounce you back.
 - **Dodge** projectiles (the only thing that hurts you). **Pick 1 of 3 upgrade cards** after each round with the mouse or keys `1` `2` `3`.
 - **Restart** after game over with `R` / `Enter` / gamepad A or the button.
 
 Game code is in `Assets/_Project/Scripts/Runtime/` (namespace `RollItOut`). Tuning values live at the top of each
-script (`PlayerBallController`, `PlayerCollisionDamage`, `PlayerHealth`, `EnemyDefs`, `RoundManager.Composition`).
+script (`PlayerBallController`, `PlayerCollisionDamage` (crush thresholds), `PlayerHealth`, `EnemyDefs`, `RoundManager.Composition`).
 
 Upgrade cards are data in `CardDefs` (`UpgradeManager.cs`): name, category, rarity, text, stack limit and icon. Stat cards
 are read in `PlayerUpgradeState`; on-hit, on-kill and trail cards run in `PlayerCardEffects`. Rewards are weighted by
