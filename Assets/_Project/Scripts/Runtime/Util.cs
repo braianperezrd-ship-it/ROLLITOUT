@@ -167,6 +167,22 @@ namespace RollItOut
 #endif
         }
 
+        /// <summary>Dash: Space / Shift, gamepad A / right shoulder.</summary>
+        public static bool DashPressed()
+        {
+#if ENABLE_LEGACY_INPUT_MANAGER
+            return Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift)
+                || Input.GetKeyDown(KeyCode.JoystickButton0) || Input.GetKeyDown(KeyCode.JoystickButton5);
+#elif ENABLE_INPUT_SYSTEM
+            var kb = Keyboard.current;
+            var pad = Gamepad.current;
+            return (kb != null && (kb.spaceKey.wasPressedThisFrame || kb.leftShiftKey.wasPressedThisFrame || kb.rightShiftKey.wasPressedThisFrame))
+                || (pad != null && (pad.buttonSouth.wasPressedThisFrame || pad.rightShoulder.wasPressedThisFrame));
+#else
+            return false;
+#endif
+        }
+
         public static bool DigitPressed(int index)
         {
 #if ENABLE_LEGACY_INPUT_MANAGER

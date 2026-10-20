@@ -8,6 +8,9 @@ namespace RollItOut
     {
         public const float Acceleration = 18f;
         public const float Deceleration = 12f;
+        public const float DashCooldown = 4f;
+        public const float DashDuration = 0.15f;
+        public const float DashSpeedMultiplier = 2.6f; // of current max speed
 
         public Transform roller;       // rotates to show rolling
         public GameObject stoneShield; // visible while Stone Skin charges remain
@@ -21,6 +24,15 @@ namespace RollItOut
         Transform[] visuals;
         Vector3[] visualScales;
         const float SquashTime = 0.18f;
+        bool dashQueued;
+        Vector2 dashDir;
+        float dashTimer;
+        float dashReadyAt;
+
+        /// <summary>0 right after a dash, 1 when it is ready again.</summary>
+        public float DashCharge => 1f - Mathf.Clamp01((dashReadyAt - Time.time) / DashCooldown);
+        public bool DashReady => Time.time >= dashReadyAt;
+        public bool Dashing => dashTimer > 0f;
 
         /// <summary>Velocity we set before the last physics step; the true speed at impact.</summary>
         public Vector2 PreStepVelocity { get; private set; }
@@ -47,6 +59,8 @@ namespace RollItOut
         void Update()
         {
             input = controlEnabled ? InputReader.Move() : Vector2.zero;
+            // timeScale 0 means the cards / game-over screen is up; Space there selects, it must not queue a dash.
+            if (controlEnabled && Time.timeScale > 0f && DashReady && InputReader.DashPressed()) dashQueued = true;
             transform.localScale = Vector3.one * up.SizeScale;
             if (stoneShield != null) stoneShield.SetActive(up.stoneSkinCharges > 0);
 
@@ -79,7 +93,28 @@ namespace RollItOut
         {
             Vector2 v = rb.GetVel();
             float dt = Time.fixedDeltaTime;
-            if (input.sqrMagnitude > 0.01f)
+            if (dashQueued)
+            {
+                dashQueued = false;
+                // Dash toward the stick; with no input, keep rolling the way we already go.
+                Vector2 dir = input.sqrMagnitude > 0.01f ? input.normalized : v.sqrMagnitude > 0.04f ? v.normalized : Vector2.zero;
+                if (dir != Vector2.zero)
+                {
+                    dashDir = dir;
+                    dashTimer = DashDuration;
+                    dashReadyAt = Time.time + DashCooldown;
+                    up.impactArmed = true;
+                    Fx.Burst(transform.position, new Color(0.8f, 0.9f, 1f), 8, 5f, 0.15f, 0.3f);
+                }
+            }
+            if (dashTimer > 0f)
+            {
+                // Hold full dash speed for the burst; normal acceleration eases it back to max afterwards.
+                dashTimer -= dt;
+                v = dashDir * up.MaxSpeed * DashSpeedMultiplier;
+                Spark.Create(transform.position, -v * 0.05f, new Color(0.8f, 0.9f, 1f, 0.5f), 0.3f * up.SizeScale, 0.25f);
+            }
+            else if (input.sqrMagnitude > 0.01f)
             {
                 // Faster correction when reversing so turning stays responsive, not slippery.
                 float align = v.sqrMagnitude > 0.04f ? Vector2.Dot(v.normalized, input.normalized) : 1f;

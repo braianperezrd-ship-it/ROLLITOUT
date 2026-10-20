@@ -48,6 +48,7 @@ namespace RollItOut
             Text(new Rect(W * 0.5f - 150, 8, 300, 36), "ROUND " + round.Round, mid, Color.white);
             Text(new Rect(W - 230, 8, 220, 28), "Enemies: " + round.AliveCount, small, new Color(1f, 1f, 1f, 0.85f));
             DrawStacks(W);
+            if (round.State == GameState.Playing) DrawDash(W);
 
             if (round.State == GameState.Playing && round.BannerTime > 0f)
             {
@@ -85,6 +86,24 @@ namespace RollItOut
             float y = 88;
             if (health.SecondChanceReady) { Text(new Rect(10, y, 160, 22), "Second Chance ready", tiny, new Color(1f, 0.9f, 0.4f)); y += 20; }
             if (health.HardenedActive) Text(new Rect(10, y, 160, 22), "Hardened", tiny, new Color(0.8f, 0.85f, 1f));
+        }
+
+        PlayerBallController ball;
+
+        void DrawDash(float W)
+        {
+            if (ball == null) ball = upgrades.GetComponent<PlayerBallController>();
+            if (ball == null) return;
+            const float bw = 220f, bh = 14f;
+            var r = new Rect(W * 0.5f - bw * 0.5f, H - 44, bw, bh);
+            Fill(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), new Color(0f, 0f, 0f, 0.75f));
+            Fill(r, new Color(0.15f, 0.17f, 0.22f));
+            bool ready = ball.DashReady;
+            // Pulses brighter once ready so the player notices it without looking down.
+            float pulse = ready ? 0.85f + 0.15f * Mathf.Sin(Time.unscaledTime * 6f) : 1f;
+            Color c = ready ? new Color(0.55f * pulse, 0.85f * pulse, 1f) : new Color(0.35f, 0.5f, 0.7f);
+            Fill(new Rect(r.x, r.y, r.width * ball.DashCharge, r.height), c);
+            Text(new Rect(r.x, r.y - 22, r.width, 20), ready ? "DASH  [Space / Shift / A]" : "DASH", tiny, new Color(1f, 1f, 1f, ready ? 0.9f : 0.55f));
         }
 
         void DrawStacks(float W)
