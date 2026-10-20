@@ -30,6 +30,8 @@ namespace RollItOut
         public string BannerSub { get; private set; } = "";
         public float BannerTime { get; private set; }
         public int AliveCount => alive.Count;
+        /// <summary>Number of the checkpoint whose reward is on screen, or 0 for a round-clear reward.</summary>
+        public int CheckpointReward { get; private set; }
         public IReadOnlyList<EnemyController> Alive => alive;
 
         readonly List<EnemyController> alive = new List<EnemyController>();
@@ -69,9 +71,20 @@ namespace RollItOut
             ball.Teleport(cp.transform.position);
             health.Revive(RespawnInvulnerability);
             Fx.Burst(cp.transform.position, new Color(0.35f, 1f, 0.55f), 24, 7f, 0.2f, 0.6f);
-            int left = 0;
-            foreach (var c in Checkpoint.All) if (!c.Spent) left++;
-            ShowBanner("RESPAWNED", left == 0 ? "No checkpoints left - next fall is final!" : "Checkpoint used up - find another one", 2f);
+            ShowBanner("RESPAWNED", Checkpoint.Next == null ? "No checkpoints left - next fall is final!" : "Checkpoint used up - reach the next one", 2f);
+        }
+
+        /// <summary>Checkpoint completed: pause for a card pick, then carry on with the same round.</summary>
+        public void OfferCheckpointReward(int number)
+        {
+            if (State != GameState.Playing) return;
+            CheckpointReward = number;
+            Offered = upgrades.Roll(3);
+            Selected = -1;
+            Highlight = 1;
+            InputReader.NavStep(); // swallow the stick state held from play
+            State = GameState.Reward;
+            Time.timeScale = 0f;
         }
 
         public void ShowBanner(string title, string sub, float seconds)
@@ -214,7 +227,13 @@ namespace RollItOut
                         health.OnCardTaken(Offered[Selected]);
                         Time.timeScale = 1f;
                         ClearProjectiles();
-                        StartRound(Round + 1);
+                        if (CheckpointReward > 0)
+                        {
+                            CheckpointReward = 0;
+                            State = GameState.Playing;
+                            if (alive.Count == 0) BeginClear(); // the last enemy died while the cards were open
+                        }
+                        else StartRound(Round + 1);
                     }
                     break;
                 case GameState.GameOver:
