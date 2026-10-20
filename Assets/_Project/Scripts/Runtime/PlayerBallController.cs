@@ -184,6 +184,17 @@ namespace RollItOut
             }
         }
 
+        /// <summary>Checkpoint respawn: jump to a point at rest, without dragging the trail across the map.</summary>
+        public void Teleport(Vector2 pos)
+        {
+            rb.position = pos;
+            transform.position = pos;
+            SetVelocity(Vector2.zero);
+            dashTimer = 0f;
+            var trail = GetComponent<TrailRenderer>();
+            if (trail != null) trail.Clear();
+        }
+
         public void SetVelocity(Vector2 v)
         {
             rb.SetVel(v);

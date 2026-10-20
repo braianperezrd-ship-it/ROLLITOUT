@@ -9,6 +9,7 @@ namespace RollItOut
     public class RoundManager : MonoBehaviour
     {
         public const float ClearDelay = 0.7f;
+        public const float RespawnInvulnerability = 2f;
         const float SelectFlashTime = 0.35f;
 
         public Vector2 ArenaHalf = new Vector2(11f, 6f);
@@ -48,9 +49,36 @@ namespace RollItOut
 
         void OnPlayerDied()
         {
+            var cp = Checkpoint.Current;
+            if (cp != null)
+            {
+                Respawn(cp);
+                return;
+            }
             State = GameState.GameOver;
             Fx.Burst(player.position, new Color(1f, 0.8f, 0.2f), 20, 8f, 0.25f, 0.7f);
             Time.timeScale = 0f;
+        }
+
+        void Respawn(Checkpoint cp)
+        {
+            Fx.Burst(player.position, new Color(1f, 0.8f, 0.2f), 20, 8f, 0.25f, 0.7f);
+            CameraShake.Shake(0.3f, 0.3f);
+            cp.Consume();
+            ClearProjectiles(); // shots in flight would land the moment the blink ends
+            ball.Teleport(cp.transform.position);
+            health.Revive(RespawnInvulnerability);
+            Fx.Burst(cp.transform.position, new Color(0.35f, 1f, 0.55f), 24, 7f, 0.2f, 0.6f);
+            int left = 0;
+            foreach (var c in Checkpoint.All) if (!c.Spent) left++;
+            ShowBanner("RESPAWNED", left == 0 ? "No checkpoints left - next fall is final!" : "Checkpoint used up - find another one", 2f);
+        }
+
+        public void ShowBanner(string title, string sub, float seconds)
+        {
+            Banner = title;
+            BannerSub = sub;
+            BannerTime = seconds;
         }
 
         // ---- round flow ----

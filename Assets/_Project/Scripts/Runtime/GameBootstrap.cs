@@ -87,6 +87,9 @@ namespace RollItOut
             rm.effects = player.GetComponent<PlayerCardEffects>();
             rm.effects.round = rm;
 
+            // Under the root so Restart wipes them along with everything else.
+            Checkpoint.BuildAll(Child(root.transform, "Checkpoints"), ArenaHalf, player.transform, rm);
+
             var hud = mgrGo.AddComponent<HUD>();
             hud.round = rm;
             hud.health = rm.health;
