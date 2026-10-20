@@ -10,7 +10,7 @@ namespace RollItOut
     public static class GameBootstrap
     {
         static GameObject root;
-        static readonly Vector2 ArenaHalf = new Vector2(11f, 6f);
+        static readonly Vector2 ArenaHalf = new Vector2(55f, 30f); // 5x the original 22x12 playfield; the camera follows the ball
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Init()
@@ -47,7 +47,7 @@ namespace RollItOut
                 cam = go.AddComponent<Camera>();
             }
             cam.orthographic = true;
-            cam.orthographicSize = 7.2f; // fits the 22x12 arena plus a margin for the HUD
+            cam.orthographicSize = 7.2f; // same view as the old single-screen arena; CameraShake follows the player
             cam.transform.position = new Vector3(0f, 0f, -10f);
             cam.transform.rotation = Quaternion.identity;
             cam.clearFlags = CameraClearFlags.SolidColor;
@@ -70,6 +70,7 @@ namespace RollItOut
 
             BuildArena(root.transform);
             var player = BuildPlayer(root.transform);
+            CameraShake.Follow(player.transform, ArenaHalf);
 
             var mgrGo = Child(root.transform, "Managers").gameObject;
             var upgrades = mgrGo.AddComponent<UpgradeManager>();
