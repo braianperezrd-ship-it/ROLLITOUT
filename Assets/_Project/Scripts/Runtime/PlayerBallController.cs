@@ -83,12 +83,13 @@ namespace RollItOut
             {
                 // Faster correction when reversing so turning stays responsive, not slippery.
                 float align = v.sqrMagnitude > 0.04f ? Vector2.Dot(v.normalized, input.normalized) : 1f;
-                float mul = Mathf.Lerp(2f, 1f, (align + 1f) * 0.5f);
-                v = Vector2.MoveTowards(v, input * up.MaxSpeed, Acceleration * mul * dt);
+                float mul = Mathf.Lerp(2f * up.TurnBoost, 1f, (align + 1f) * 0.5f);
+                v = Vector2.MoveTowards(v, input * up.MaxSpeed, up.Acceleration * mul * dt);
+                if (v.magnitude >= up.MaxSpeed * 0.97f) up.impactArmed = true;
             }
             else
             {
-                v = Vector2.MoveTowards(v, Vector2.zero, Deceleration * dt);
+                v = Vector2.MoveTowards(v, Vector2.zero, up.Deceleration * dt);
             }
             rb.SetVel(v);
             PreStepVelocity = v;
