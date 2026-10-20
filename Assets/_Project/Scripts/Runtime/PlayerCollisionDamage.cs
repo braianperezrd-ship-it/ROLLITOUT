@@ -7,7 +7,7 @@ namespace RollItOut
     /// Ball-to-enemy damage. Enemies no bigger than the ball get crushed: the ball rolls over them, they go flat,
     /// and a lethal crush leaves a splat (crushable size: PlayerUpgradeState.CrushSizeRatio). Bigger enemies still take
     /// a crash with knockback and recoil, unless Wrecking Ball ploughs through them at full speed.
-    /// Crash damage scales with impact speed, and bounces off the arena walls bank speed and bonus damage.
+    /// Crash damage scales with impact speed, and dashing into an arena wall bounces off it, banking speed and bonus damage.
     /// Enemy contact never hurts the player.
     /// </summary>
     [RequireComponent(typeof(PlayerBallController))]
@@ -25,8 +25,6 @@ namespace RollItOut
         public const float CrushSpeedKeep = 0.9f;
         /// <summary>Crash damage scales with impact speed: x1 at base speed, clamped to this range.</summary>
         public const float MinSpeedDamage = 0.6f, MaxSpeedDamage = 2.5f;
-        /// <summary>Below this speed the ball just rolls along a wall instead of bouncing off it.</summary>
-        public const float MinWallBounceSpeed = 3f;
         /// <summary>Speed multiplier per wall bounce, capped at a multiple of max speed.</summary>
         public const float WallSpeedGain = 1.15f, WallSpeedCap = 1.8f;
         /// <summary>Each bounce banks a charge: +damage on the next enemy hit, if it lands within the window.</summary>
@@ -75,15 +73,14 @@ namespace RollItOut
         }
 
         /// <summary>
-        /// Fast bounces off the arena walls keep the ball's speed (and add a bit), and bank a charge that boosts
-        /// the next enemy hit. Bank shots off a wall are the way to land the biggest crashes.
+        /// Dashing into an arena wall bounces the ball off it with its speed kept (plus a bit), and banks a charge
+        /// that boosts the next enemy hit. Bank shots off a wall are the way to land the biggest crashes.
         /// </summary>
         void WallBounce(Collision2D c)
         {
             if (Time.time < nextWallBounceTime || c.contactCount == 0) return;
             Vector2 pre = ctrl.PreStepVelocity;
-            float speed = pre.magnitude;
-            if (speed < MinWallBounceSpeed) return;
+            if (!ctrl.RecentlyDashed) return; // a normal roll into a wall just stops, only a dash bounces
 
             Vector2 n = c.GetContact(0).normal;
             if (Vector2.Dot(pre, n) > 0f) n = -n; // make it face against the incoming roll

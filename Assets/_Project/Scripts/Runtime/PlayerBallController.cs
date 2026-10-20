@@ -34,6 +34,9 @@ namespace RollItOut
         public float DashCharge => 1f - Mathf.Clamp01((dashReadyAt - Time.time) / DashCooldown);
         public bool DashReady => Time.time >= dashReadyAt;
         public bool Dashing => dashTimer > 0f;
+        /// <summary>True during a dash and for a short grace window after it, while the ball still carries dash speed.</summary>
+        public bool RecentlyDashed => Time.time < dashReadyAt - DashCooldown + DashDuration + DashGrace;
+        const float DashGrace = 0.2f;
 
         /// <summary>Velocity we set before the last physics step; the true speed at impact.</summary>
         public Vector2 PreStepVelocity { get; private set; }

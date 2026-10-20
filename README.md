@@ -47,7 +47,7 @@ player, enemies and UI at runtime, so there is no scene wiring or art to import.
 - **Crush:** roll fast over an enemy no bigger than your ball and you flatten it: you keep your momentum, it can't move
   or shoot for a moment, and a lethal crush leaves a splat. Bigger enemies (Orc, and Slime until you take Big Ball) still bounce you back.
 - **Speed = damage:** crash damage scales with how fast you hit (x1 at base speed, up to x2.5), so dash hits land hardest.
-- **Bank shots:** bounce off a wall at speed and you keep your momentum (+15% speed, capped) and bank a charge (up to 3,
+- **Bank shots:** dash into a wall and you bounce off it, keeping your momentum (+15% speed, capped) and banking a charge (up to 3,
   shown as orange pips next to the dash bar). Your next enemy hit within 2 s spends them for +25% damage each.
 - **Dodge** projectiles (the only thing that hurts you). Each enemy attacks its own way, and its wind-up shows which:
   Skeleton and Small Slime fire one bolt, Goblin a quick 3-shot volley (thick line), Orc a wide 5-shot cone, Archer a tight
