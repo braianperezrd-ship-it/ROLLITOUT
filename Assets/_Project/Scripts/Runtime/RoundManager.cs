@@ -183,6 +183,7 @@ namespace RollItOut
                     else if (Time.unscaledTime >= selectAt)
                     {
                         upgrades.Apply(Offered[Selected]);
+                        health.OnCardTaken(Offered[Selected]);
                         Time.timeScale = 1f;
                         ClearProjectiles();
                         StartRound(Round + 1);

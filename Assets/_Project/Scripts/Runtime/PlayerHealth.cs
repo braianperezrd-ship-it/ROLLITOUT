@@ -28,7 +28,11 @@ namespace RollItOut
 
         public bool Dead { get; private set; }
         public bool Invulnerable => Time.time < invulnUntil;
-        public int MaxHearts => BaseHearts + upgrades.Count(UpgradeType.IronShell);
+        public int MaxHearts => BaseHearts + upgrades.Count(UpgradeType.IronShell) + 2 * upgrades.Count(UpgradeType.GiantHeart);
+        /// <summary>Missing any health, even part of a heart.</summary>
+        public bool Hurt => !Dead && damageTaken > 0.01f;
+        /// <summary>Last Stand: down to the final heart.</summary>
+        public bool LastStandActive => upgrades.Has(UpgradeType.LastStand) && !Dead && Hearts == 1;
         /// <summary>Hardened: no projectile damage for a while.</summary>
         public bool HardenedActive => upgrades.Has(UpgradeType.Hardened) && Time.time - lastDamagedTime >= PlayerUpgradeState.HardenedDelay;
         public bool SecondChanceReady => upgrades.Has(UpgradeType.SecondChance) && !secondChanceUsed;
@@ -43,12 +47,20 @@ namespace RollItOut
 
         public void OnRoundStart() { secondChanceUsed = false; }
 
-        /// <summary>Regenerate: give back whole hearts, never above the maximum.</summary>
-        public void Heal(int hearts)
+        /// <summary>Give back hearts (fractions allowed, e.g. Vampire), never above the maximum.</summary>
+        public void Heal(float hearts, bool bigFx = true)
         {
-            if (Dead || hearts <= 0 || damageTaken <= 0f) return;
+            if (Dead || hearts <= 0f || damageTaken <= 0f) return;
             damageTaken = Mathf.Max(0f, damageTaken - hearts * UnitsPerHeart);
-            Fx.Burst(transform.position, new Color(0.4f, 1f, 0.5f), 16, 5f, 0.18f, 0.5f);
+            if (bigFx) Fx.Burst(transform.position, new Color(0.4f, 1f, 0.5f), 16, 5f, 0.18f, 0.5f);
+            else Fx.Burst(transform.position, new Color(0.4f, 1f, 0.5f), 4, 3f, 0.1f, 0.3f);
+        }
+
+        /// <summary>Cards that heal the moment they are picked.</summary>
+        public void OnCardTaken(UpgradeType t)
+        {
+            if (t == UpgradeType.FirstAid) Heal(2f);
+            else if (t == UpgradeType.GiantHeart) Heal(MaxHearts);
         }
 
         /// <summary>Safe Roll: brief projectile immunity without the hurt blink.</summary>

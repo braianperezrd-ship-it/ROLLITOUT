@@ -12,6 +12,9 @@ namespace RollItOut
         public const float HardenedDelay = 4f;
         public const int MaxChainStacks = 5, MaxFuryStacks = 5;
         public const float OverdrivePerKill = 0.02f, OverdriveMax = 0.3f;
+        /// <summary>Vampire: hearts healed per enemy death.</summary>
+        public const float VampireHeal = 0.1f;
+        public const float LastStandDamage = 0.3f, LastStandSpeed = 0.15f;
 
         int[] stacks;
         public int stoneSkinCharges;
@@ -31,6 +34,9 @@ namespace RollItOut
         public float wallChargeUntil = -1f;
 
         public int ActiveWallCharges => Time.time < wallChargeUntil ? wallCharges : 0;
+
+        PlayerHealth health;
+        bool LastStand => (health != null || (health = GetComponent<PlayerHealth>()) != null) && health.LastStandActive;
 
         int[] Stacks => stacks ?? (stacks = new int[CardDefs.Count]);
 
@@ -62,6 +68,7 @@ namespace RollItOut
                 if (now < furyUntil) bonus += 0.05f * furyStacks;
                 if (now < rushUntil) bonus += 0.3f;
                 if (now < ricochetUntil) bonus += 0.25f;
+                if (LastStand) bonus += LastStandSpeed;
                 float m = 1f + bonus + OverdriveBonus;
                 if (Has(UpgradeType.Boulder)) m *= 0.95f;
                 return BaseSpeed * m;
@@ -76,7 +83,7 @@ namespace RollItOut
         public int MaxDashCharges => Has(UpgradeType.DoubleDash) ? 2 : 1;
         public float TurnBoost => Has(UpgradeType.Agile) ? 1.25f : 1f;
         public float SizeScale => 1f + 0.12f * Count(UpgradeType.BigBall);
-        public float CollisionDamage => BaseDamage * (1f + 0.2f * Count(UpgradeType.HeavyBall) + (Has(UpgradeType.Boulder) ? 0.25f : 0f)) * (1f + OverdriveBonus);
+        public float CollisionDamage => BaseDamage * (1f + 0.2f * Count(UpgradeType.HeavyBall) + (Has(UpgradeType.Boulder) ? 0.25f : 0f)) * (1f + OverdriveBonus) * (LastStand ? 1f + LastStandDamage : 1f);
         /// <summary>Overdrive: +2% speed and damage per kill this round.</summary>
         public float OverdriveBonus => Has(UpgradeType.Overdrive) ? Mathf.Min(OverdriveMax, OverdrivePerKill * roundKills) : 0f;
         /// <summary>Chain Impact: +10% per earlier hit in the current chain.</summary>

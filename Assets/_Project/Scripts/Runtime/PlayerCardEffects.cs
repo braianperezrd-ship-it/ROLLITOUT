@@ -80,6 +80,7 @@ namespace RollItOut
         {
             Vector2 pos = e.transform.position;
             up.roundKills++;
+            if (up.Has(UpgradeType.Vampire)) health.Heal(PlayerUpgradeState.VampireHeal, false);
             if (up.Has(UpgradeType.SpreadingWound) && e.Wounded)
             {
                 EnemyController best = null;
