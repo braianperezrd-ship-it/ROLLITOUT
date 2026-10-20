@@ -19,9 +19,11 @@ namespace RollItOut
         public static float EnemyCountMultiplier(int round) { return EnemyQuantityBoost * Mathf.Min(MaxCountMultiplier, StartCountMultiplier + CountMultiplierStep * (round - 1)); }
         /// <summary>Global enemy HP factor (40% less than EnemyDefs). XP still comes from the base HP, so kills give the same XP.</summary>
         public const float EnemyHpMultiplier = 0.6f;
-        /// <summary>Share of each round spawned in a ring just off-screen (they converge within seconds); the rest anywhere on the map.</summary>
+        /// <summary>Share of each round spawned in a ring just off-screen (they converge within seconds); the rest spawn in a wider
+        /// ring and trickle in over the next 10-15s, so the screen keeps getting company instead of emptying after the first wave.
+        /// Spawning anywhere on the 233x127 map left far enemies half a minute away.</summary>
         const float NearSpawnShare = 0.7f;
-        const float NearSpawnMin = 14f, NearSpawnMax = 24f, MinSpawnDistance = 8f;
+        const float NearSpawnMin = 14f, NearSpawnMax = 22f, FarSpawnMax = 40f, MinSpawnDistance = 8f;
 
         public Vector2 ArenaHalf = new Vector2(116.875f, 63.75f);
         public Transform EnemyParent, ProjectileParent, OrbParent;
@@ -194,10 +196,11 @@ namespace RollItOut
         {
             Vector2 p = Vector2.zero;
             Vector2 min = -ArenaHalf + Vector2.one * 1.2f, max = ArenaHalf - Vector2.one * 1.2f;
-            for (int i = 0; near && i < 30; i++)
+            float rMin = near ? NearSpawnMin : NearSpawnMax, rMax = near ? NearSpawnMax : FarSpawnMax;
+            for (int i = 0; i < 30; i++)
             {
                 float ang = Random.Range(0f, Mathf.PI * 2f);
-                p = (Vector2)player.position + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * Random.Range(NearSpawnMin, NearSpawnMax);
+                p = (Vector2)player.position + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * Random.Range(rMin, rMax);
                 if (p.x > min.x && p.x < max.x && p.y > min.y && p.y < max.y) return p;
             }
             for (int i = 0; i < 30; i++)
