@@ -81,6 +81,7 @@ namespace RollItOut
             rm.ArenaHalf = ArenaHalf;
             rm.EnemyParent = Child(root.transform, "Enemies");
             rm.ProjectileParent = Child(root.transform, "Projectiles");
+            rm.OrbParent = Child(root.transform, "XpOrbs");
             rm.player = player.transform;
             rm.health = player.GetComponent<PlayerHealth>();
             rm.ball = player.GetComponent<PlayerBallController>();
