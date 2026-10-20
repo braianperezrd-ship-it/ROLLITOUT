@@ -70,6 +70,10 @@ namespace RollItOut
 
         public float Acceleration => PlayerBallController.Acceleration * (Has(UpgradeType.QuickStart) ? 1.3f : 1f);
         public float Deceleration => PlayerBallController.Deceleration * (Has(UpgradeType.Momentum) ? 0.5f : 1f);
+        /// <summary>Quick Dash: each copy cuts the dash recharge by 15%.</summary>
+        public float DashCooldown => PlayerBallController.DashCooldown * (1f - 0.15f * Count(UpgradeType.QuickDash));
+        /// <summary>Double Dash: dashes stored at once.</summary>
+        public int MaxDashCharges => Has(UpgradeType.DoubleDash) ? 2 : 1;
         public float TurnBoost => Has(UpgradeType.Agile) ? 1.25f : 1f;
         public float SizeScale => 1f + 0.12f * Count(UpgradeType.BigBall);
         public float CollisionDamage => BaseDamage * (1f + 0.2f * Count(UpgradeType.HeavyBall) + (Has(UpgradeType.Boulder) ? 0.25f : 0f)) * (1f + OverdriveBonus);

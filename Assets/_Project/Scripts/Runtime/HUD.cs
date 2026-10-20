@@ -104,6 +104,9 @@ namespace RollItOut
             float pulse = ready ? 0.85f + 0.15f * Mathf.Sin(Time.unscaledTime * 6f) : 1f;
             Color c = ready ? new Color(0.55f * pulse, 0.85f * pulse, 1f) : new Color(0.35f, 0.5f, 0.7f);
             Fill(new Rect(r.x, r.y, r.width * ball.DashCharge, r.height), c);
+            // Double Dash: split the bar, one segment per stored dash.
+            int slots = upgrades.MaxDashCharges;
+            for (int i = 1; i < slots; i++) Fill(new Rect(r.x + r.width * i / slots - 1.5f, r.y, 3f, r.height), new Color(0f, 0f, 0f, 0.85f));
 
             // Wall bounce charges banked for the next hit, as pips right of the dash bar.
             int charges = upgrades.ActiveWallCharges;
@@ -229,6 +232,10 @@ namespace RollItOut
                 case CardIcon.Trail:
                     Disc(new Rect(cx + 6, cy - 14, 28, 28), Color.white);
                     for (int i = 0; i < 4; i++) Disc(new Rect(cx - 34 + i * 10, cy - 4 - i * 2, 10 + i * 3, 10 + i * 3), new Color(c.r, c.g, c.b, 0.35f + 0.15f * i));
+                    break;
+                case CardIcon.Dash:
+                    Disc(new Rect(cx + 2, cy - 14, 28, 28), Color.white);
+                    for (int i = 0; i < 3; i++) Dia(new Rect(cx - 34 + i * 10, cy - 10 + i * 2, 34 - i * 4, 20 - i * 4), new Color(c.r, c.g, c.b, 0.4f + 0.2f * i));
                     break;
                 default: // Pulse
                     Disc(new Rect(cx - 10, cy - 10, 20, 20), c);

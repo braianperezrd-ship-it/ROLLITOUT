@@ -27,15 +27,25 @@ namespace RollItOut
         bool dashQueued;
         Vector2 dashDir;
         float dashTimer;
-        float dashReadyAt;
+        int dashCharges = 1;
+        float rechargeAt;          // Time.time when the next stored dash comes back
+        float lastDashTime = -99f;
         SpriteRenderer[] sprites;
 
-        /// <summary>0 right after a dash, 1 when it is ready again.</summary>
-        public float DashCharge => 1f - Mathf.Clamp01((dashReadyAt - Time.time) / DashCooldown);
-        public bool DashReady => Time.time >= dashReadyAt;
+        /// <summary>Stored dashes plus progress toward the next one, as a fraction of the max (0..1).</summary>
+        public float DashCharge
+        {
+            get
+            {
+                int max = up.MaxDashCharges;
+                float next = dashCharges >= max ? 0f : 1f - Mathf.Clamp01((rechargeAt - Time.time) / up.DashCooldown);
+                return Mathf.Clamp01((dashCharges + next) / max);
+            }
+        }
+        public bool DashReady => dashCharges > 0;
         public bool Dashing => dashTimer > 0f;
         /// <summary>True during a dash and for a short grace window after it, while the ball still carries dash speed.</summary>
-        public bool RecentlyDashed => Time.time < dashReadyAt - DashCooldown + DashDuration + DashGrace;
+        public bool RecentlyDashed => Time.time < lastDashTime + DashDuration + DashGrace;
         const float DashGrace = 0.2f;
 
         /// <summary>Velocity we set before the last physics step; the true speed at impact.</summary>
@@ -64,6 +74,7 @@ namespace RollItOut
         void Update()
         {
             input = controlEnabled ? InputReader.Move() : Vector2.zero;
+            RechargeDash();
             // timeScale 0 means the cards / game-over screen is up; Space there selects, it must not queue a dash.
             if (controlEnabled && Time.timeScale > 0f && !PauseMenu.BlocksInput && DashReady && InputReader.DashPressed()) dashQueued = true;
             transform.localScale = Vector3.one * up.SizeScale;
@@ -107,7 +118,10 @@ namespace RollItOut
                 {
                     dashDir = dir;
                     dashTimer = DashDuration;
-                    dashReadyAt = Time.time + DashCooldown;
+                    lastDashTime = Time.time;
+                    // The recharge clock starts when the first stored dash is spent.
+                    if (dashCharges >= up.MaxDashCharges) rechargeAt = Time.time + up.DashCooldown;
+                    dashCharges--;
                     up.impactArmed = true;
                     Fx.Burst(transform.position, new Color(0.8f, 0.9f, 1f), 8, 5f, 0.15f, 0.3f);
                 }
@@ -137,6 +151,18 @@ namespace RollItOut
             // Motion blur: afterimages while dashing and while still bleeding off the extra speed.
             if (sprites != null && (dashTimer > 0f || v.magnitude > up.MaxSpeed * 1.15f))
                 Ghost.Create(sprites, new Color(0.6f, 0.85f, 1f), dashTimer > 0f ? 0.5f : 0.3f, 0.18f);
+        }
+
+        /// <summary>Brings stored dashes back one at a time (Double Dash stores two).</summary>
+        void RechargeDash()
+        {
+            int max = up.MaxDashCharges;
+            if (dashCharges > max) dashCharges = max;
+            while (dashCharges < max && Time.time >= rechargeAt)
+            {
+                dashCharges++;
+                if (dashCharges < max) rechargeAt = Mathf.Max(rechargeAt + up.DashCooldown, Time.time);
+            }
         }
 
         /// <summary>Bounces the ball off a wall: mirrors its velocity (and any dash) and multiplies the speed, up to cap.</summary>
