@@ -28,6 +28,7 @@ namespace RollItOut
         Vector2 dashDir;
         float dashTimer;
         float dashReadyAt;
+        SpriteRenderer[] sprites;
 
         /// <summary>0 right after a dash, 1 when it is ready again.</summary>
         public float DashCharge => 1f - Mathf.Clamp01((dashReadyAt - Time.time) / DashCooldown);
@@ -51,6 +52,7 @@ namespace RollItOut
             visuals = list.ToArray();
             visualScales = new Vector3[visuals.Length];
             for (int i = 0; i < visuals.Length; i++) visualScales[i] = visuals[i].localScale;
+            sprites = GetComponentsInChildren<SpriteRenderer>(true);
         }
 
         /// <summary>Brief bulge of the ball's sprites when it lands on something it crushed.</summary>
@@ -128,6 +130,10 @@ namespace RollItOut
             }
             rb.SetVel(v);
             PreStepVelocity = v;
+
+            // Motion blur: afterimages while dashing and while still bleeding off the extra speed.
+            if (sprites != null && (dashTimer > 0f || v.magnitude > up.MaxSpeed * 1.15f))
+                Ghost.Create(sprites, new Color(0.6f, 0.85f, 1f), dashTimer > 0f ? 0.5f : 0.3f, 0.18f);
         }
 
         public void SetVelocity(Vector2 v)

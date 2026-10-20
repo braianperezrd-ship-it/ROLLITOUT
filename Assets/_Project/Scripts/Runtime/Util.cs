@@ -216,6 +216,56 @@ namespace RollItOut
         }
     }
 
+    /// <summary>Fading afterimage of a set of sprites; a cheap motion blur for fast moves.</summary>
+    public class Ghost : MonoBehaviour
+    {
+        float life, age, alpha;
+        SpriteRenderer[] parts;
+        Color[] colors;
+
+        public static void Create(SpriteRenderer[] source, Color tint, float alpha, float life)
+        {
+            var go = new GameObject("Ghost");
+            if (Fx.Root != null) go.transform.SetParent(Fx.Root, false);
+            var g = go.AddComponent<Ghost>();
+            g.life = life; g.alpha = alpha;
+            var parts = new System.Collections.Generic.List<SpriteRenderer>();
+            foreach (var src in source)
+            {
+                if (src == null || !src.enabled || !src.gameObject.activeInHierarchy) continue;
+                var t = new GameObject("Part").transform;
+                t.SetParent(go.transform, false);
+                t.SetPositionAndRotation(src.transform.position, src.transform.rotation);
+                t.localScale = src.transform.lossyScale;
+                var sr = t.gameObject.AddComponent<SpriteRenderer>();
+                sr.sprite = src.sprite;
+                sr.sortingOrder = src.sortingOrder - 5; // behind the real ball
+                sr.color = Color.Lerp(src.color, tint, 0.5f);
+                parts.Add(sr);
+            }
+            g.parts = parts.ToArray();
+            g.colors = new Color[g.parts.Length];
+            for (int i = 0; i < g.parts.Length; i++) g.colors[i] = g.parts[i].color;
+            g.Fade(0f);
+        }
+
+        void Fade(float k)
+        {
+            for (int i = 0; i < parts.Length; i++)
+            {
+                var c = colors[i];
+                parts[i].color = new Color(c.r, c.g, c.b, c.a * alpha * (1f - k));
+            }
+        }
+
+        void Update()
+        {
+            age += Time.deltaTime;
+            if (age >= life) { Destroy(gameObject); return; }
+            Fade(age / life);
+        }
+    }
+
     /// <summary>Tiny self-destructing particle.</summary>
     public class Spark : MonoBehaviour
     {
