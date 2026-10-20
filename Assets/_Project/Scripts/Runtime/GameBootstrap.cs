@@ -212,7 +212,7 @@ namespace RollItOut
             col.sharedMaterial = new PhysicsMaterial2D { friction = 0f, bounciness = 0.2f };
 
             // The ball is an armadillo rolled up: banded shell spins with velocity.
-            Color ballColor = new Color(0.78f, 0.62f, 0.46f);
+            Color ballColor = new Color(1f, 0.78f, 0.2f);
             Color ink = new Color(0.08f, 0.05f, 0.02f);
             var roller = Child(go.transform, "Roller");
             var body = SpriteLib.Add(roller, "Shell", SpriteLib.ArmadilloShell, ballColor, 11, Vector3.zero, Vector3.one);
@@ -226,8 +226,8 @@ namespace RollItOut
             trail.time = 0.25f;
             trail.startWidth = 0.45f;
             trail.endWidth = 0f;
-            trail.startColor = new Color(0.85f, 0.7f, 0.5f, 0.35f);
-            trail.endColor = new Color(0.85f, 0.7f, 0.5f, 0f);
+            trail.startColor = new Color(1f, 0.8f, 0.3f, 0.35f);
+            trail.endColor = new Color(1f, 0.8f, 0.3f, 0f);
             trail.sortingOrder = 8; // below the ball and projectiles
             trail.numCapVertices = 4;
 
