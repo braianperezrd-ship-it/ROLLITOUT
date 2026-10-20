@@ -4,6 +4,8 @@ namespace RollItOut
 {
     public enum EnemyType { Skeleton, Goblin, Orc, Slime, SlimeSmall, Archer, Shaman }
     public enum EnemyBehavior { Chaser, Archer, Shaman }
+    /// <summary>How a shot is fired, so each enemy reads differently: one bolt, a quick volley, a cone, a ring, or a seeker.</summary>
+    public enum AttackPattern { Single, Burst, Fan, Ring, Homing }
 
     public class EnemyDef
     {
@@ -17,6 +19,10 @@ namespace RollItOut
         // projectile attack (every enemy has one); minRange/maxRange only used by ranged units
         public float telegraph, projectileSpeed, cooldown, minRange, maxRange;
         public Color projectileColor;
+        // attack pattern: shots = volley length (Burst), cone/ring count (Fan/Ring); spread = Fan cone width in degrees
+        public AttackPattern attack;
+        public int shots = 1;
+        public float spread, burstGap, projectileSize = 1f;
     }
 
     public static class EnemyDefs
@@ -28,17 +34,17 @@ namespace RollItOut
                 case EnemyType.Skeleton:
                     return new EnemyDef { type = t, name = "Skeleton", behavior = EnemyBehavior.Chaser, hp = 20, speed = 3.0f, size = 0.9f, knockbackResistance = 1f, color = new Color(0.88f, 0.87f, 0.8f), telegraph = 1.0f, projectileSpeed = 5f, cooldown = 3.2f, projectileColor = new Color(1f, 0.95f, 0.5f) };
                 case EnemyType.Goblin:
-                    return new EnemyDef { type = t, name = "Goblin", behavior = EnemyBehavior.Chaser, hp = 14, speed = 4.6f, size = 0.6f, knockbackResistance = 0.9f, color = new Color(0.45f, 0.85f, 0.3f), telegraph = 0.8f, projectileSpeed = 6.5f, cooldown = 2.6f, projectileColor = new Color(0.7f, 1f, 0.2f) };
+                    return new EnemyDef { type = t, name = "Goblin", behavior = EnemyBehavior.Chaser, hp = 14, speed = 4.6f, size = 0.6f, knockbackResistance = 0.9f, color = new Color(0.45f, 0.85f, 0.3f), telegraph = 0.8f, projectileSpeed = 6.5f, cooldown = 3.0f, projectileColor = new Color(0.7f, 1f, 0.2f), attack = AttackPattern.Burst, shots = 3, burstGap = 0.14f, projectileSize = 0.8f };
                 case EnemyType.Orc:
-                    return new EnemyDef { type = t, name = "Orc", behavior = EnemyBehavior.Chaser, hp = 90, speed = 1.7f, size = 1.5f, knockbackResistance = 5f, color = new Color(0.35f, 0.5f, 0.2f), telegraph = 1.3f, projectileSpeed = 4f, cooldown = 4f, projectileColor = new Color(1f, 0.35f, 0.15f) };
+                    return new EnemyDef { type = t, name = "Orc", behavior = EnemyBehavior.Chaser, hp = 90, speed = 1.7f, size = 1.5f, knockbackResistance = 5f, color = new Color(0.35f, 0.5f, 0.2f), telegraph = 1.3f, projectileSpeed = 4f, cooldown = 4f, projectileColor = new Color(1f, 0.35f, 0.15f), attack = AttackPattern.Fan, shots = 5, spread = 70f, projectileSize = 1.25f };
                 case EnemyType.Slime:
-                    return new EnemyDef { type = t, name = "Slime", behavior = EnemyBehavior.Chaser, hp = 30, speed = 1.8f, size = 1.1f, knockbackResistance = 1f, color = new Color(0.25f, 0.85f, 0.8f), splitCount = 2, splitType = EnemyType.SlimeSmall, telegraph = 1.0f, projectileSpeed = 4.5f, cooldown = 3.5f, projectileColor = new Color(0.2f, 1f, 0.9f) };
+                    return new EnemyDef { type = t, name = "Slime", behavior = EnemyBehavior.Chaser, hp = 30, speed = 1.8f, size = 1.1f, knockbackResistance = 1f, color = new Color(0.25f, 0.85f, 0.8f), splitCount = 2, splitType = EnemyType.SlimeSmall, telegraph = 1.0f, projectileSpeed = 4.5f, cooldown = 3.5f, projectileColor = new Color(0.2f, 1f, 0.9f), attack = AttackPattern.Ring, shots = 8 };
                 case EnemyType.SlimeSmall:
                     return new EnemyDef { type = t, name = "Small Slime", behavior = EnemyBehavior.Chaser, hp = 12, speed = 2.5f, size = 0.6f, knockbackResistance = 1f, color = new Color(0.4f, 0.95f, 0.9f), telegraph = 0.9f, projectileSpeed = 4.5f, cooldown = 4.5f, projectileColor = new Color(0.2f, 1f, 0.9f) };
                 case EnemyType.Archer:
-                    return new EnemyDef { type = t, name = "Skeleton Archer", behavior = EnemyBehavior.Archer, hp = 20, speed = 2.0f, size = 0.9f, knockbackResistance = 1f, color = new Color(0.95f, 0.85f, 0.65f), telegraph = 0.9f, projectileSpeed = 7f, cooldown = 2.2f, minRange = 5f, maxRange = 9f, projectileColor = new Color(1f, 0.55f, 0.1f) };
+                    return new EnemyDef { type = t, name = "Skeleton Archer", behavior = EnemyBehavior.Archer, hp = 20, speed = 2.0f, size = 0.9f, knockbackResistance = 1f, color = new Color(0.95f, 0.85f, 0.65f), telegraph = 0.9f, projectileSpeed = 7f, cooldown = 2.6f, minRange = 5f, maxRange = 9f, projectileColor = new Color(1f, 0.55f, 0.1f), attack = AttackPattern.Fan, shots = 3, spread = 18f };
                 default:
-                    return new EnemyDef { type = EnemyType.Shaman, name = "Goblin Shaman", behavior = EnemyBehavior.Shaman, hp = 14, speed = 2.6f, size = 0.7f, knockbackResistance = 1f, color = new Color(0.7f, 0.4f, 0.95f), telegraph = 0.65f, projectileSpeed = 5.5f, minRange = 6f, maxRange = 10f, projectileColor = new Color(1f, 0.25f, 0.85f) };
+                    return new EnemyDef { type = EnemyType.Shaman, name = "Goblin Shaman", behavior = EnemyBehavior.Shaman, hp = 14, speed = 2.6f, size = 0.7f, knockbackResistance = 1f, color = new Color(0.7f, 0.4f, 0.95f), telegraph = 0.8f, projectileSpeed = 4.5f, minRange = 6f, maxRange = 10f, projectileColor = new Color(1f, 0.25f, 0.85f), attack = AttackPattern.Homing, projectileSize = 1.3f };
             }
         }
     }
@@ -64,13 +70,16 @@ namespace RollItOut
         SpriteRenderer body;
         SpriteRenderer[] parts;   // every body sprite, so a hit flashes the whole enemy white
         Color[] partColors;
-        Transform vis, hpFill, telegraph;
-        SpriteRenderer telegraphSr;
+        Transform vis, hpFill;
+        SpriteRenderer[] telegraphs;   // one aim line per shot of a Fan, else a single line (or a ring for Ring)
         float hp, maxHp, spawnTimer, spawnTotal, flashTimer, woundLeft, woundTick, woundDps, zoneDamage, zoneTimer, bloodTimer, flatTimer;
         bool crushedToDeath;
         Vector2 crushDir = Vector2.right;
         Vector2 knockVel;
         bool telegraphing;
+        int burstLeft;
+        float burstTimer;
+        bool Attacking => telegraphing || burstLeft > 0;
         float stateTimer, strafeSign = 1f;
         Vector2 aimDir = Vector2.right;
         Color baseColor;
@@ -125,9 +134,13 @@ namespace RollItOut
 
             if (def.telegraph > 0f)
             {
-                telegraphSr = SpriteLib.Add(transform, "Telegraph", SpriteLib.Square, def.projectileColor, 3, Vector3.zero, Vector3.one);
-                telegraph = telegraphSr.transform;
-                telegraph.gameObject.SetActive(false);
+                int n = def.attack == AttackPattern.Fan ? def.shots : 1;
+                telegraphs = new SpriteRenderer[n];
+                for (int i = 0; i < n; i++)
+                {
+                    telegraphs[i] = SpriteLib.Add(transform, "Telegraph", def.attack == AttackPattern.Ring ? SpriteLib.Ring : SpriteLib.Square, def.projectileColor, 3, Vector3.zero, Vector3.one);
+                    telegraphs[i].gameObject.SetActive(false);
+                }
             }
             SetBar();
         }
@@ -200,6 +213,13 @@ namespace RollItOut
             float dist = toP.magnitude;
             stateTimer -= dt;
 
+            if (burstLeft > 0)
+            {
+                burstTimer -= dt;
+                if (burstTimer <= 0f) { Shoot(aimDir); burstLeft--; burstTimer = Def.burstGap; }
+                return;
+            }
+
             if (!telegraphing)
             {
                 if (stateTimer <= 0f && dist < 14f)
@@ -207,28 +227,88 @@ namespace RollItOut
                     telegraphing = true;
                     stateTimer = Def.telegraph;
                     aimDir = toP.normalized;
-                    telegraph.gameObject.SetActive(true);
+                    SetTelegraph(true);
                 }
                 return;
             }
 
             if (stateTimer > 0.25f) aimDir = toP.normalized; // aim locks for the final 0.25s so the shot is dodgeable
             float k = 1f - Mathf.Clamp01(stateTimer / Def.telegraph);
-            bool locked = stateTimer <= 0.25f;
-            float len = 7f;
-            float ang = Mathf.Atan2(aimDir.y, aimDir.x) * Mathf.Rad2Deg;
-            telegraph.localPosition = aimDir * (Def.size * 0.5f + len * 0.5f);
-            telegraph.localRotation = Quaternion.Euler(0f, 0f, ang);
-            telegraph.localScale = new Vector3(len, locked ? 0.16f : 0.08f, 1f);
-            Color c = locked ? Color.white : Def.projectileColor;
-            telegraphSr.color = new Color(c.r, c.g, c.b, 0.15f + 0.5f * k);
+            DrawTelegraph(k, stateTimer <= 0.25f);
 
             if (stateTimer <= 0f)
             {
-                Projectile.Spawn((Vector2)transform.position + aimDir * (Def.size * 0.5f + 0.2f), aimDir, Def.projectileSpeed * projSpeedScale, Def.projectileColor, round.ProjectileParent);
+                Fire();
                 telegraphing = false;
-                telegraph.gameObject.SetActive(false);
-                stateTimer = (Def.behavior == EnemyBehavior.Shaman ? Random.Range(1.3f, 2.6f) : Def.cooldown * Random.Range(0.9f, 1.1f)) * cooldownScale;
+                SetTelegraph(false);
+                stateTimer = (Def.behavior == EnemyBehavior.Shaman ? Random.Range(2.0f, 3.2f) : Def.cooldown * Random.Range(0.9f, 1.1f)) * cooldownScale;
+            }
+        }
+
+        void Fire()
+        {
+            switch (Def.attack)
+            {
+                case AttackPattern.Burst:
+                    Shoot(aimDir);
+                    burstLeft = Def.shots - 1;
+                    burstTimer = Def.burstGap;
+                    break;
+                case AttackPattern.Fan:
+                    for (int i = 0; i < Def.shots; i++) Shoot(Rotate(aimDir, FanAngle(i)));
+                    break;
+                case AttackPattern.Ring:
+                    for (int i = 0; i < Def.shots; i++) Shoot(Rotate(aimDir, 360f * i / Def.shots)); // one spoke always points at the player
+                    break;
+                case AttackPattern.Homing:
+                    Shoot(aimDir).Home(player, 110f, 1.4f);
+                    break;
+                default:
+                    Shoot(aimDir);
+                    break;
+            }
+        }
+
+        Projectile Shoot(Vector2 dir)
+        {
+            return Projectile.Spawn((Vector2)transform.position + dir * (Def.size * 0.5f + 0.2f), dir, Def.projectileSpeed * projSpeedScale, Def.projectileColor, round.ProjectileParent, Def.projectileSize);
+        }
+
+        float FanAngle(int i) { return Def.shots > 1 ? -Def.spread * 0.5f + Def.spread * i / (Def.shots - 1) : 0f; }
+
+        static Vector2 Rotate(Vector2 v, float deg) { return Quaternion.Euler(0f, 0f, deg) * v; }
+
+        void SetTelegraph(bool on)
+        {
+            if (telegraphs == null) return;
+            foreach (var t in telegraphs) t.gameObject.SetActive(on);
+        }
+
+        void DrawTelegraph(float k, bool locked)
+        {
+            Color c = locked ? Color.white : Def.projectileColor;
+            c.a = 0.15f + 0.5f * k;
+            if (Def.attack == AttackPattern.Ring)
+            {
+                // A ring that swells around the body: shots will fly out in every direction.
+                var r = telegraphs[0].transform;
+                r.localPosition = Vector3.zero;
+                r.localRotation = Quaternion.identity;
+                r.localScale = Vector3.one * Def.size * Mathf.Lerp(1.2f, 2.4f, k);
+                telegraphs[0].color = c;
+                return;
+            }
+            // Fans draw a shorter line per shot; seekers a short stub, since they won't fly straight anyway.
+            float len = Def.attack == AttackPattern.Fan ? 5f : Def.attack == AttackPattern.Homing ? 3f : 7f;
+            float width = (locked ? 0.16f : 0.08f) * (Def.attack == AttackPattern.Burst ? 1.5f : 1f);
+            for (int i = 0; i < telegraphs.Length; i++)
+            {
+                Vector2 d = telegraphs.Length > 1 ? Rotate(aimDir, FanAngle(i)) : aimDir;
+                var t = telegraphs[i].transform;
+                t.localPosition = d * (Def.size * 0.5f + len * 0.5f);
+                t.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
+                t.localScale = new Vector3(len, width, 1f);
+                telegraphs[i].color = c;
             }
         }
 
@@ -246,10 +326,10 @@ namespace RollItOut
             switch (Def.behavior)
             {
                 case EnemyBehavior.Chaser:
-                    desired = dir * spd * (telegraphing ? 0.35f : 1f); // slows while winding up a shot
+                    desired = dir * spd * (Attacking ? 0.35f : 1f); // slows while winding up or firing a volley
                     break;
                 case EnemyBehavior.Archer:
-                    if (!telegraphing)
+                    if (!Attacking)
                     {
                         if (dist > Def.maxRange) desired = dir * spd;
                         else if (dist < Def.minRange) desired = -dir * spd;
@@ -257,7 +337,7 @@ namespace RollItOut
                     break;
                 case EnemyBehavior.Shaman:
                     {
-                        float mul = telegraphing ? 0.3f : 1f;
+                        float mul = Attacking ? 0.3f : 1f;
                         Vector2 perp = new Vector2(-dir.y, dir.x) * strafeSign;
                         if (dist < Def.minRange) desired = (-dir + perp * 0.4f).normalized * spd * mul;
                         else if (dist > Def.maxRange) desired = dir * spd * mul;
@@ -330,10 +410,11 @@ namespace RollItOut
             flatTimer = FlatDuration;
             crushDir = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector2.right;
             flashTimer = HitFlashTime;
-            if (telegraphing)
+            if (Attacking)
             {
                 telegraphing = false;
-                if (telegraph != null) telegraph.gameObject.SetActive(false);
+                burstLeft = 0; // a crush also cuts a volley short
+                SetTelegraph(false);
                 stateTimer = Def.telegraph; // getting crushed resets the wind-up
             }
             knockVel = crushDir * 1.5f / Def.knockbackResistance; // pressed into the floor, barely slides

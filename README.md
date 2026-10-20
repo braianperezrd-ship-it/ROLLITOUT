@@ -46,7 +46,10 @@ player, enemies and UI at runtime, so there is no scene wiring or art to import.
 - **Move:** WASD / arrow keys / gamepad left stick. There is no attack button: crash into enemies.
 - **Crush:** roll fast over an enemy no bigger than your ball and you flatten it: you keep your momentum, it can't move
   or shoot for a moment, and a lethal crush leaves a splat. Bigger enemies (Orc, and Slime until you take Big Ball) still bounce you back.
-- **Dodge** projectiles (the only thing that hurts you). **Pick 1 of 3 upgrade cards** after each round with the mouse or keys `1` `2` `3`.
+- **Dodge** projectiles (the only thing that hurts you). Each enemy attacks its own way, and its wind-up shows which:
+  Skeleton and Small Slime fire one bolt, Goblin a quick 3-shot volley (thick line), Orc a wide 5-shot cone, Archer a tight
+  3-shot spread, Slime a ring of 8 in every direction (swelling ring), and Shaman a slow seeker that curves after you briefly.
+- **Pick 1 of 3 upgrade cards** after each round with the mouse or keys `1` `2` `3`.
 - **Restart** after game over with `R` / `Enter` / gamepad A or the button.
 
 Game code is in `Assets/_Project/Scripts/Runtime/` (namespace `RollItOut`). Tuning values live at the top of each
