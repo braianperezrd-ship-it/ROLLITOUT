@@ -11,6 +11,11 @@ namespace RollItOut
         public const float ClearDelay = 0.7f;
         public const float RespawnInvulnerability = 2f;
         const float SelectFlashTime = 0.35f;
+        /// <summary>Every round spawns this many times the base Composition, so the screen stays crowded on the 110x60 map.</summary>
+        public const int EnemyCountMultiplier = 4;
+        /// <summary>Share of each round spawned in a ring just off-screen (they converge within seconds); the rest anywhere on the map.</summary>
+        const float NearSpawnShare = 0.7f;
+        const float NearSpawnMin = 14f, NearSpawnMax = 24f, MinSpawnDistance = 8f;
 
         public Vector2 ArenaHalf = new Vector2(55f, 30f);
         public Transform EnemyParent, ProjectileParent;
@@ -84,8 +89,8 @@ namespace RollItOut
             GrantCard("CHECKPOINT " + number + "/" + Checkpoint.Count + " COMPLETE");
         }
 
-        /// <summary>XP needed to go from level n to n+1: 8, 13, 20, 29, 40...</summary>
-        public static int XpForLevel(int n) { return 8 + 4 * (n - 1) + (n - 1) * (n - 1); }
+        /// <summary>XP needed to go from level n to n+1: 32, 52, 80, 116, 160... (scaled with EnemyCountMultiplier so levels come at the same pace).</summary>
+        public static int XpForLevel(int n) { return EnemyCountMultiplier * (8 + 4 * (n - 1) + (n - 1) * (n - 1)); }
 
         static int XpFor(EnemyDef d) { return Mathf.Max(1, Mathf.RoundToInt(d.hp / 10f)); }
 
@@ -153,13 +158,13 @@ namespace RollItOut
 
             foreach (var kv in Composition(n))
                 for (int i = 0; i < kv.Value; i++)
-                    SpawnEnemy(kv.Key, PickSpawnPoint(), 0.9f);
+                    SpawnEnemy(kv.Key, PickSpawnPoint(Random.value < NearSpawnShare), 0.9f);
         }
 
         static List<KeyValuePair<EnemyType, int>> Composition(int n)
         {
             var l = new List<KeyValuePair<EnemyType, int>>();
-            void Add(EnemyType t, int c) { if (c > 0) l.Add(new KeyValuePair<EnemyType, int>(t, c)); }
+            void Add(EnemyType t, int c) { if (c > 0) l.Add(new KeyValuePair<EnemyType, int>(t, c * EnemyCountMultiplier)); }
             if (n == 1) { Add(EnemyType.Skeleton, 5); }
             else if (n == 2) { Add(EnemyType.Skeleton, 3); Add(EnemyType.Goblin, 3); Add(EnemyType.Archer, 1); }
             else if (n == 3) { Add(EnemyType.Skeleton, 3); Add(EnemyType.Goblin, 3); Add(EnemyType.Orc, 1); Add(EnemyType.Archer, 2); }
@@ -178,13 +183,20 @@ namespace RollItOut
             return l;
         }
 
-        Vector2 PickSpawnPoint()
+        Vector2 PickSpawnPoint(bool near)
         {
             Vector2 p = Vector2.zero;
+            Vector2 min = -ArenaHalf + Vector2.one * 1.2f, max = ArenaHalf - Vector2.one * 1.2f;
+            for (int i = 0; near && i < 30; i++)
+            {
+                float ang = Random.Range(0f, Mathf.PI * 2f);
+                p = (Vector2)player.position + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * Random.Range(NearSpawnMin, NearSpawnMax);
+                if (p.x > min.x && p.x < max.x && p.y > min.y && p.y < max.y) return p;
+            }
             for (int i = 0; i < 30; i++)
             {
                 p = new Vector2(Random.Range(-ArenaHalf.x + 1.2f, ArenaHalf.x - 1.2f), Random.Range(-ArenaHalf.y + 1.2f, ArenaHalf.y - 1.2f));
-                if (Vector2.Distance(p, player.position) > 6f) break;
+                if (Vector2.Distance(p, player.position) > MinSpawnDistance) break;
             }
             return p;
         }
