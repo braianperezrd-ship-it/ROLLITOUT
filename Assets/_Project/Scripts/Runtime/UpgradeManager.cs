@@ -11,7 +11,7 @@ namespace RollItOut
         Rush, Crusher, Impact, Boulder, ChainImpact, Ricochet, DeepWound, SpreadingWound, OpenWound, BloodTrail,
         IronShell, ReinforcedCore, SecondChance, Hardened, SafeRoll, DustTrail, Shockwave, ExplosiveImpact, Spin, Aftershock,
         RollingFire, Regenerate, Deflect, Steamroller, WreckingBall, Overdrive,
-        QuickDash, DoubleDash, PhaseDash, ReflectDash
+        QuickDash, DoubleDash, PhaseDash, ReflectDash, Slingshot
     }
 
     public enum Rarity { Common, Rare, Epic }
@@ -86,6 +86,7 @@ namespace RollItOut
             C(UpgradeType.DoubleDash, "DOUBLE DASH", "Dash", Rarity.Rare, "Store 2 dashes and chain them back to back.", Dash, CardIcon.Dash),
             C(UpgradeType.PhaseDash, "PHASE DASH", "Dash", Rarity.Rare, "You can't take damage while dashing.", Dash, CardIcon.Shield),
             C(UpgradeType.ReflectDash, "REFLECT DASH", "Dash", Rarity.Rare, "Dashing into projectiles sends them back to hurt enemies.", Dash, CardIcon.Turn),
+            C(UpgradeType.Slingshot, "SLINGSHOT", "Dash", Rarity.Rare, "Wall bounces restart your dash and launch you much farther.", Dash, CardIcon.Dash),
         };
 
         static CardDef[] byId;

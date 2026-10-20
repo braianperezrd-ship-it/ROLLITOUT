@@ -166,11 +166,18 @@ namespace RollItOut
         }
 
         /// <summary>Bounces the ball off a wall: mirrors its velocity (and any dash) and multiplies the speed, up to cap.</summary>
-        public void WallBounce(Vector2 pre, Vector2 normal, float gain, float cap)
+        /// <param name="restartDash">Slingshot: launch a fresh dash burst along the bounce, so the next wall can bounce it too.</param>
+        public void WallBounce(Vector2 pre, Vector2 normal, float gain, float cap, bool restartDash = false)
         {
             Vector2 v = Vector2.Reflect(pre, normal);
             SetVelocity(v.normalized * Mathf.Min(v.magnitude * gain, Mathf.Max(cap, pre.magnitude)));
             if (dashTimer > 0f) dashDir = Vector2.Reflect(dashDir, normal).normalized;
+            if (restartDash && v.sqrMagnitude > 0.01f)
+            {
+                if (dashTimer <= 0f) dashDir = v.normalized;
+                dashTimer = DashDuration;
+                lastDashTime = Time.time;
+            }
         }
 
         public void SetVelocity(Vector2 v)
