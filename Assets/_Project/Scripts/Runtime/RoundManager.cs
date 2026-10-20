@@ -68,7 +68,8 @@ namespace RollItOut
             ball.controlEnabled = true;
 
             Banner = "ROUND " + n;
-            BannerSub = n == 2 ? "New: Skeleton Archers - dodge the shots!"
+            BannerSub = n == 1 ? "Every enemy can shoot - watch the telegraphs!"
+                      : n == 2 ? "New: Skeleton Archers keep their distance"
                       : n == 5 ? "New: Slimes split when they die"
                       : n == 6 ? "New: Goblin Shamans keep their distance"
                       : "";

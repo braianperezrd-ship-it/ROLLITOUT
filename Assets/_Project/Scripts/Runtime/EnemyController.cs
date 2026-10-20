@@ -14,8 +14,8 @@ namespace RollItOut
         public Color color;
         public int splitCount;
         public EnemyType splitType;
-        // ranged only
-        public float telegraph, projectileSpeed, minRange, maxRange;
+        // projectile attack (every enemy has one); minRange/maxRange only used by ranged units
+        public float telegraph, projectileSpeed, cooldown, minRange, maxRange;
         public Color projectileColor;
     }
 
@@ -26,17 +26,17 @@ namespace RollItOut
             switch (t)
             {
                 case EnemyType.Skeleton:
-                    return new EnemyDef { type = t, name = "Skeleton", behavior = EnemyBehavior.Chaser, hp = 20, speed = 3.0f, size = 0.9f, knockbackResistance = 1f, color = new Color(0.88f, 0.87f, 0.8f) };
+                    return new EnemyDef { type = t, name = "Skeleton", behavior = EnemyBehavior.Chaser, hp = 20, speed = 3.0f, size = 0.9f, knockbackResistance = 1f, color = new Color(0.88f, 0.87f, 0.8f), telegraph = 1.0f, projectileSpeed = 5f, cooldown = 3.2f, projectileColor = new Color(1f, 0.95f, 0.5f) };
                 case EnemyType.Goblin:
-                    return new EnemyDef { type = t, name = "Goblin", behavior = EnemyBehavior.Chaser, hp = 14, speed = 4.6f, size = 0.6f, knockbackResistance = 0.9f, color = new Color(0.45f, 0.85f, 0.3f) };
+                    return new EnemyDef { type = t, name = "Goblin", behavior = EnemyBehavior.Chaser, hp = 14, speed = 4.6f, size = 0.6f, knockbackResistance = 0.9f, color = new Color(0.45f, 0.85f, 0.3f), telegraph = 0.8f, projectileSpeed = 6.5f, cooldown = 2.6f, projectileColor = new Color(0.7f, 1f, 0.2f) };
                 case EnemyType.Orc:
-                    return new EnemyDef { type = t, name = "Orc", behavior = EnemyBehavior.Chaser, hp = 90, speed = 1.7f, size = 1.5f, knockbackResistance = 5f, color = new Color(0.35f, 0.5f, 0.2f) };
+                    return new EnemyDef { type = t, name = "Orc", behavior = EnemyBehavior.Chaser, hp = 90, speed = 1.7f, size = 1.5f, knockbackResistance = 5f, color = new Color(0.35f, 0.5f, 0.2f), telegraph = 1.3f, projectileSpeed = 4f, cooldown = 4f, projectileColor = new Color(1f, 0.35f, 0.15f) };
                 case EnemyType.Slime:
-                    return new EnemyDef { type = t, name = "Slime", behavior = EnemyBehavior.Chaser, hp = 30, speed = 1.8f, size = 1.1f, knockbackResistance = 1f, color = new Color(0.25f, 0.85f, 0.8f), splitCount = 2, splitType = EnemyType.SlimeSmall };
+                    return new EnemyDef { type = t, name = "Slime", behavior = EnemyBehavior.Chaser, hp = 30, speed = 1.8f, size = 1.1f, knockbackResistance = 1f, color = new Color(0.25f, 0.85f, 0.8f), splitCount = 2, splitType = EnemyType.SlimeSmall, telegraph = 1.0f, projectileSpeed = 4.5f, cooldown = 3.5f, projectileColor = new Color(0.2f, 1f, 0.9f) };
                 case EnemyType.SlimeSmall:
-                    return new EnemyDef { type = t, name = "Small Slime", behavior = EnemyBehavior.Chaser, hp = 12, speed = 2.5f, size = 0.6f, knockbackResistance = 1f, color = new Color(0.4f, 0.95f, 0.9f) };
+                    return new EnemyDef { type = t, name = "Small Slime", behavior = EnemyBehavior.Chaser, hp = 12, speed = 2.5f, size = 0.6f, knockbackResistance = 1f, color = new Color(0.4f, 0.95f, 0.9f), telegraph = 0.9f, projectileSpeed = 4.5f, cooldown = 4.5f, projectileColor = new Color(0.2f, 1f, 0.9f) };
                 case EnemyType.Archer:
-                    return new EnemyDef { type = t, name = "Skeleton Archer", behavior = EnemyBehavior.Archer, hp = 20, speed = 2.0f, size = 0.9f, knockbackResistance = 1f, color = new Color(0.95f, 0.85f, 0.65f), telegraph = 0.9f, projectileSpeed = 7f, minRange = 5f, maxRange = 9f, projectileColor = new Color(1f, 0.55f, 0.1f) };
+                    return new EnemyDef { type = t, name = "Skeleton Archer", behavior = EnemyBehavior.Archer, hp = 20, speed = 2.0f, size = 0.9f, knockbackResistance = 1f, color = new Color(0.95f, 0.85f, 0.65f), telegraph = 0.9f, projectileSpeed = 7f, cooldown = 2.2f, minRange = 5f, maxRange = 9f, projectileColor = new Color(1f, 0.55f, 0.1f) };
                 default:
                     return new EnemyDef { type = EnemyType.Shaman, name = "Goblin Shaman", behavior = EnemyBehavior.Shaman, hp = 14, speed = 2.6f, size = 0.7f, knockbackResistance = 1f, color = new Color(0.7f, 0.4f, 0.95f), telegraph = 0.65f, projectileSpeed = 5.5f, minRange = 6f, maxRange = 10f, projectileColor = new Color(1f, 0.25f, 0.85f) };
             }
@@ -107,7 +107,7 @@ namespace RollItOut
             SpriteLib.Add(transform, "HpBack", SpriteLib.Square, new Color(0f, 0f, 0f, 0.7f), 8, new Vector3(0f, y, 0f), new Vector3(s + 0.06f, 0.14f, 1f));
             hpFill = SpriteLib.Add(transform, "HpFill", SpriteLib.Square, new Color(0.9f, 0.25f, 0.25f), 9, new Vector3(0f, y, 0f), new Vector3(s, 0.09f, 1f)).transform;
 
-            if (def.behavior != EnemyBehavior.Chaser)
+            if (def.telegraph > 0f)
             {
                 telegraphSr = SpriteLib.Add(transform, "Telegraph", SpriteLib.Square, def.projectileColor, 3, Vector3.zero, Vector3.one);
                 telegraph = telegraphSr.transform;
@@ -153,7 +153,7 @@ namespace RollItOut
             if (flashTimer > 0f) { flashTimer -= dt; body.color = Color.white; }
             else body.color = woundLeft > 0f ? Color.Lerp(baseColor, new Color(0.85f, 0.1f, 0.15f), 0.4f) : baseColor;
 
-            if (Def.behavior != EnemyBehavior.Chaser && player != null) UpdateRanged(dt);
+            if (Def.telegraph > 0f && player != null) UpdateRanged(dt);
         }
 
         void UpdateRanged(float dt)
@@ -190,7 +190,7 @@ namespace RollItOut
                 Projectile.Spawn((Vector2)transform.position + aimDir * (Def.size * 0.5f + 0.2f), aimDir, Def.projectileSpeed * projSpeedScale, Def.projectileColor, round.ProjectileParent);
                 telegraphing = false;
                 telegraph.gameObject.SetActive(false);
-                stateTimer = (Def.behavior == EnemyBehavior.Archer ? 2.2f : Random.Range(1.3f, 2.6f)) * cooldownScale;
+                stateTimer = (Def.behavior == EnemyBehavior.Shaman ? Random.Range(1.3f, 2.6f) : Def.cooldown * Random.Range(0.9f, 1.1f)) * cooldownScale;
             }
         }
 
@@ -208,7 +208,7 @@ namespace RollItOut
             switch (Def.behavior)
             {
                 case EnemyBehavior.Chaser:
-                    desired = dir * spd;
+                    desired = dir * spd * (telegraphing ? 0.35f : 1f); // slows while winding up a shot
                     break;
                 case EnemyBehavior.Archer:
                     if (!telegraphing)
