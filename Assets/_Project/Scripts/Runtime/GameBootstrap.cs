@@ -51,7 +51,7 @@ namespace RollItOut
             cam.transform.position = new Vector3(0f, 0f, -10f);
             cam.transform.rotation = Quaternion.identity;
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.06f, 0.06f, 0.09f);
+            cam.backgroundColor = new Color(0.16f, 0.1f, 0.06f); // dusk-brown beyond the desert's edge
             if (cam.GetComponent<CameraShake>() == null) cam.gameObject.AddComponent<CameraShake>();
         }
 
@@ -108,18 +108,80 @@ namespace RollItOut
             var floor = new GameObject("Floor");
             floor.transform.SetParent(arena, false);
             var sr = floor.AddComponent<SpriteRenderer>();
-            sr.sprite = SpriteLib.Checker;
+            sr.sprite = SpriteLib.Sand;
             sr.drawMode = SpriteDrawMode.Tiled;
             sr.size = ArenaHalf * 2f;
             sr.sortingOrder = -10;
 
-            Color frame = new Color(0.4f, 0.32f, 0.5f);
+            BuildDesertDecor(arena);
+
+            Color frame = new Color(0.72f, 0.5f, 0.3f); // sandstone
             float t = 0.25f, hx = ArenaHalf.x, hy = ArenaHalf.y;
             // Visible border just outside the playfield, plus a solid collider behind it.
             Wall(arena, "Top", new Vector2(0f, hy + 1f), new Vector2(hx * 2f + 6f, 2f), frame, new Vector2(0f, hy + t * 0.5f), new Vector2(hx * 2f + 2f * t, t));
             Wall(arena, "Bottom", new Vector2(0f, -hy - 1f), new Vector2(hx * 2f + 6f, 2f), frame, new Vector2(0f, -hy - t * 0.5f), new Vector2(hx * 2f + 2f * t, t));
             Wall(arena, "Left", new Vector2(-hx - 1f, 0f), new Vector2(2f, hy * 2f + 6f), frame, new Vector2(-hx - t * 0.5f, 0f), new Vector2(t, hy * 2f));
             Wall(arena, "Right", new Vector2(hx + 1f, 0f), new Vector2(2f, hy * 2f + 6f), frame, new Vector2(hx + t * 0.5f, 0f), new Vector2(t, hy * 2f));
+        }
+
+        /// <summary>Purely visual desert dressing (no colliders): dune shading, rocks, cacti and bones.</summary>
+        static void BuildDesertDecor(Transform arena)
+        {
+            var decor = Child(arena, "Decor");
+            var rng = new System.Random(1234); // same layout every run
+            float R(float a, float b) => a + (float)rng.NextDouble() * (b - a);
+            Vector2 P(float m) => new Vector2(R(-ArenaHalf.x + m, ArenaHalf.x - m), R(-ArenaHalf.y + m, ArenaHalf.y - m));
+            float area = ArenaHalf.x * ArenaHalf.y * 4f;
+
+            // Soft light/dark dune patches break up the tiling.
+            for (int i = 0, c = (int)(area / 60f); i < c; i++)
+            {
+                bool lit = rng.NextDouble() < 0.5;
+                var col = lit ? new Color(0.78f, 0.62f, 0.38f, 0.16f) : new Color(0.3f, 0.2f, 0.1f, 0.16f);
+                SpriteLib.Add(decor, "Dune", SpriteLib.Circle, col, -9, P(2f), new Vector3(R(5f, 12f), R(2f, 4.5f), 1f));
+            }
+
+            var rock = new Color(0.42f, 0.33f, 0.26f);
+            for (int i = 0, c = (int)(area / 120f); i < c; i++)
+            {
+                var p = P(1.5f);
+                float s = R(0.35f, 0.9f);
+                SpriteLib.Add(decor, "RockShadow", SpriteLib.Circle, new Color(0f, 0f, 0f, 0.2f), -9, p + new Vector2(0.08f, -0.1f) * s, new Vector3(s * 1.3f, s * 0.8f, 1f));
+                SpriteLib.Add(decor, "Rock", SpriteLib.Circle, rock, -9, p, new Vector3(s * 1.2f, s * 0.85f, 1f));
+            }
+
+            var cactus = new Color(0.28f, 0.48f, 0.24f);
+            var cactusDark = new Color(0.18f, 0.33f, 0.16f);
+            for (int i = 0, c = (int)(area / 220f); i < c; i++)
+            {
+                var t = Child(decor, "Cactus");
+                t.localPosition = P(2f);
+                float s = R(0.8f, 1.3f);
+                t.localScale = Vector3.one * s;
+                SpriteLib.Add(t, "Shadow", SpriteLib.Circle, new Color(0f, 0f, 0f, 0.22f), -9, new Vector3(0.15f, -0.55f, 0f), new Vector3(1.1f, 0.35f, 1f));
+                SpriteLib.Add(t, "Trunk", SpriteLib.Square, cactus, -9, Vector3.zero, new Vector3(0.32f, 1.2f, 1f));
+                SpriteLib.Add(t, "Top", SpriteLib.Circle, cactus, -9, new Vector3(0f, 0.6f, 0f), new Vector3(0.32f, 0.32f, 1f));
+                SpriteLib.Add(t, "Rib", SpriteLib.Square, cactusDark, -9, new Vector3(0.05f, 0f, 0f), new Vector3(0.05f, 1.1f, 1f));
+                float side = rng.NextDouble() < 0.5 ? -1f : 1f;
+                SpriteLib.Add(t, "ArmA", SpriteLib.Square, cactus, -9, new Vector3(side * 0.26f, 0f, 0f), new Vector3(0.3f, 0.18f, 1f));
+                SpriteLib.Add(t, "ArmAUp", SpriteLib.Square, cactus, -9, new Vector3(side * 0.36f, 0.2f, 0f), new Vector3(0.18f, 0.45f, 1f));
+                if (rng.NextDouble() < 0.6)
+                {
+                    SpriteLib.Add(t, "ArmB", SpriteLib.Square, cactus, -9, new Vector3(-side * 0.26f, 0.2f, 0f), new Vector3(0.3f, 0.16f, 1f));
+                    SpriteLib.Add(t, "ArmBUp", SpriteLib.Square, cactus, -9, new Vector3(-side * 0.36f, 0.36f, 0f), new Vector3(0.16f, 0.32f, 1f));
+                }
+            }
+
+            var bone = new Color(0.86f, 0.8f, 0.68f, 0.85f);
+            for (int i = 0, c = (int)(area / 400f); i < c; i++)
+            {
+                var t = Child(decor, "Bones");
+                t.localPosition = P(2f);
+                t.localRotation = Quaternion.Euler(0f, 0f, R(0f, 360f));
+                SpriteLib.Add(t, "Shaft", SpriteLib.Square, bone, -9, Vector3.zero, new Vector3(0.7f, 0.1f, 1f));
+                SpriteLib.Add(t, "EndA", SpriteLib.Circle, bone, -9, new Vector3(-0.35f, 0f, 0f), Vector3.one * 0.2f);
+                SpriteLib.Add(t, "EndB", SpriteLib.Circle, bone, -9, new Vector3(0.35f, 0f, 0f), Vector3.one * 0.2f);
+            }
         }
 
         static void Wall(Transform parent, string name, Vector2 colPos, Vector2 colSize, Color color, Vector2 visPos, Vector2 visSize)
