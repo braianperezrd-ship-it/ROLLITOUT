@@ -10,7 +10,7 @@ namespace RollItOut
         public PlayerUpgradeState upgrades;
         public UpgradeManager upgradeMgr;
 
-        GUIStyle big, mid, small;
+        GUIStyle big, mid, midSmall, small, tiny;
         const float H = 720f;
 
         void Styles()
@@ -18,12 +18,15 @@ namespace RollItOut
             if (big != null) return;
             big = new GUIStyle { fontSize = 54, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = true };
             mid = new GUIStyle { fontSize = 26, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            midSmall = new GUIStyle(mid) { fontSize = 21 };
             small = new GUIStyle { fontSize = 18, alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            tiny = new GUIStyle { fontSize = 14, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = false };
         }
 
         static void Fill(Rect r, Color c) { GUI.DrawTexture(r, SpriteLib.Square.texture, ScaleMode.StretchToFill, true, 0f, c, 0f, 0f); }
         static void Disc(Rect r, Color c) { GUI.DrawTexture(r, SpriteLib.Circle.texture, ScaleMode.StretchToFill, true, 0f, c, 0f, 0f); }
         static void RingTex(Rect r, Color c) { GUI.DrawTexture(r, SpriteLib.Ring.texture, ScaleMode.StretchToFill, true, 0f, c, 0f, 0f); }
+        static void Dia(Rect r, Color c) { GUI.DrawTexture(r, SpriteLib.Diamond.texture, ScaleMode.StretchToFill, true, 0f, c, 0f, 0f); }
 
         void Text(Rect r, string s, GUIStyle st, Color c)
         {
@@ -59,7 +62,7 @@ namespace RollItOut
 
         void DrawHearts()
         {
-            for (int i = 0; i < PlayerHealth.MaxHearts; i++)
+            for (int i = 0; i < health.MaxHearts; i++)
             {
                 var r = new Rect(14 + i * 44, 10, 38, 38);
                 Disc(new Rect(r.x - 2, r.y - 2, r.width + 4, r.height + 4), new Color(0f, 0f, 0f, 0.8f));
@@ -79,18 +82,21 @@ namespace RollItOut
                 RingTex(r, Color.black);
                 Text(new Rect(46, 56, 60, 28), "x" + upgrades.stoneSkinCharges, small, Color.white);
             }
+            float y = 88;
+            if (health.SecondChanceReady) { Text(new Rect(10, y, 160, 22), "Second Chance ready", tiny, new Color(1f, 0.9f, 0.4f)); y += 20; }
+            if (health.HardenedActive) Text(new Rect(10, y, 160, 22), "Hardened", tiny, new Color(0.8f, 0.85f, 1f));
         }
 
         void DrawStacks(float W)
         {
-            string[] names = { "Speed", "Big Ball", "Heavy Ball", "Wound", "Resistance" };
-            int[] vals = { upgrades.speed, upgrades.bigBall, upgrades.heavyBall, upgrades.wound, upgrades.resistance };
             float y = 40;
-            for (int i = 0; i < names.Length; i++)
+            foreach (UpgradeType t in System.Enum.GetValues(typeof(UpgradeType)))
             {
-                if (vals[i] <= 0) continue;
-                Text(new Rect(W - 230, y, 220, 22), names[i] + " x" + vals[i], small, new Color(1f, 1f, 1f, 0.75f));
-                y += 22;
+                int n = upgrades.Count(t);
+                if (n <= 0 || t == UpgradeType.StoneSkin) continue; // Stone Skin charges show under the hearts
+                var d = CardDefs.Get(t);
+                Text(new Rect(W - 230, y, 220, 18), d.title + (d.maxStacks == 1 ? "" : " x" + n), tiny, new Color(d.color.r, d.color.g, d.color.b, 0.85f));
+                y += 18;
             }
         }
 
@@ -108,7 +114,7 @@ namespace RollItOut
             for (int i = 0; i < n; i++)
             {
                 var type = round.Offered[i];
-                var info = UpgradeManager.Info(type);
+                var info = CardDefs.Get(type);
                 bool chosen = round.Selected == i;
                 var r = new Rect(x0 + i * (cw + gap), 190, cw, ch);
                 bool hover = round.Selected < 0 && r.Contains(e.mousePosition);
@@ -116,12 +122,13 @@ namespace RollItOut
 
                 if (chosen) { float g = round.SelectProgress * 10f; r = new Rect(r.x - g, r.y - g, r.width + 2 * g, r.height + 2 * g); }
                 bool lit = chosen || (round.Selected < 0 && round.Highlight == i);
-                Fill(new Rect(r.x - 4, r.y - 4, r.width + 8, r.height + 8), lit ? Color.white : info.color);
+                Fill(new Rect(r.x - 4, r.y - 4, r.width + 8, r.height + 8), lit ? Color.white : CardDefs.RarityColor(info.rarity));
                 Fill(r, lit ? new Color(0.2f, 0.2f, 0.27f) : new Color(0.1f, 0.1f, 0.15f));
 
-                DrawIcon(type, new Rect(r.x + cw / 2 - 45, r.y + 26, 90, 90), info.color);
-                Text(new Rect(r.x + 8, r.y + 130, r.width - 16, 40), info.title, mid, Color.white);
-                Text(new Rect(r.x + 14, r.y + 176, r.width - 28, 70), info.text, small, new Color(0.9f, 0.9f, 0.95f));
+                Text(new Rect(r.x + 8, r.y + 6, r.width - 16, 20), info.rarity.ToString().ToUpper() + "  ·  " + info.category.ToUpper(), tiny, CardDefs.RarityColor(info.rarity));
+                DrawIcon(info.icon, new Rect(r.x + cw / 2 - 45, r.y + 30, 90, 90), info.color);
+                Text(new Rect(r.x + 8, r.y + 130, r.width - 16, 40), info.title, info.title.Length > 12 ? midSmall : mid, Color.white);
+                Text(new Rect(r.x + 14, r.y + 172, r.width - 28, 76), info.text, small, new Color(0.9f, 0.9f, 0.95f));
                 int owned = upgradeMgr.Stacks(type);
                 if (owned > 0) Text(new Rect(r.x, r.y + ch - 62, r.width, 24), (type == UpgradeType.StoneSkin ? "Charges: " : "Owned: x") + owned, small, new Color(1f, 1f, 1f, 0.55f));
                 Text(new Rect(r.x, r.y + ch - 34, r.width, 24), "[" + (i + 1) + "]", small, new Color(1f, 1f, 1f, 0.5f));
@@ -135,37 +142,68 @@ namespace RollItOut
         }
 
         // Simple shape icons so each card reads at a glance.
-        static void DrawIcon(UpgradeType t, Rect r, Color c)
+        static void DrawIcon(CardIcon t, Rect r, Color c)
         {
             Disc(r, new Color(c.r * 0.35f, c.g * 0.35f, c.b * 0.35f));
             RingTex(r, c);
             float cx = r.center.x, cy = r.center.y;
             switch (t)
             {
-                case UpgradeType.Speed:
+                case CardIcon.Lines:
                     for (int i = 0; i < 3; i++) Fill(new Rect(cx - 30 + i * 6, cy - 22 + i * 16, 50 - i * 6, 8), c);
                     break;
-                case UpgradeType.BigBall:
+                case CardIcon.Grow:
                     Disc(new Rect(cx - 12, cy - 12, 24, 24), c);
                     RingTex(new Rect(cx - 30, cy - 30, 60, 60), c);
                     break;
-                case UpgradeType.HeavyBall:
+                case CardIcon.Heavy:
                     Disc(new Rect(cx - 28, cy - 28, 56, 56), c);
                     Fill(new Rect(cx - 16, cy - 4, 32, 8), new Color(0.1f, 0.05f, 0.02f));
                     break;
-                case UpgradeType.Wound:
+                case CardIcon.Drops:
                     Disc(new Rect(cx - 22, cy - 6, 20, 20), c);
                     Disc(new Rect(cx + 4, cy + 2, 16, 16), c);
                     Disc(new Rect(cx - 8, cy - 26, 14, 14), c);
                     break;
-                case UpgradeType.StoneSkin:
+                case CardIcon.Shield:
                     Disc(new Rect(cx - 26, cy - 26, 52, 52), c);
                     Fill(new Rect(cx - 3, cy - 20, 6, 40), new Color(0.2f, 0.2f, 0.25f));
                     Fill(new Rect(cx - 20, cy - 3, 40, 6), new Color(0.2f, 0.2f, 0.25f));
                     break;
-                default:
+                case CardIcon.Bar:
                     RingTex(new Rect(cx - 28, cy - 28, 56, 56), c);
                     Fill(new Rect(cx - 18, cy - 4, 36, 8), c);
+                    break;
+                case CardIcon.Chevron:
+                    for (int i = 0; i < 3; i++) Dia(new Rect(cx - 30 + i * 16, cy - 16, 24, 32), new Color(c.r, c.g, c.b, 0.5f + 0.25f * i));
+                    break;
+                case CardIcon.Wave:
+                    Disc(new Rect(cx + 6, cy - 14, 28, 28), c);
+                    for (int i = 0; i < 3; i++) Disc(new Rect(cx - 30 + i * 11, cy - 5, 10, 10), new Color(c.r, c.g, c.b, 0.3f + 0.2f * i));
+                    break;
+                case CardIcon.Turn:
+                    RingTex(new Rect(cx - 26, cy - 26, 52, 52), c);
+                    Disc(new Rect(cx + 14, cy - 26, 16, 16), c);
+                    Disc(new Rect(cx - 8, cy - 8, 16, 16), c);
+                    break;
+                case CardIcon.Burst:
+                    Dia(new Rect(cx - 30, cy - 8, 60, 16), c);
+                    Dia(new Rect(cx - 8, cy - 30, 16, 60), c);
+                    Disc(new Rect(cx - 12, cy - 12, 24, 24), Color.white);
+                    break;
+                case CardIcon.Heart:
+                    Disc(new Rect(cx - 24, cy - 20, 26, 26), c);
+                    Disc(new Rect(cx - 2, cy - 20, 26, 26), c);
+                    Dia(new Rect(cx - 24, cy - 12, 48, 40), c);
+                    break;
+                case CardIcon.Trail:
+                    Disc(new Rect(cx + 6, cy - 14, 28, 28), Color.white);
+                    for (int i = 0; i < 4; i++) Disc(new Rect(cx - 34 + i * 10, cy - 4 - i * 2, 10 + i * 3, 10 + i * 3), new Color(c.r, c.g, c.b, 0.35f + 0.15f * i));
+                    break;
+                default: // Pulse
+                    Disc(new Rect(cx - 10, cy - 10, 20, 20), c);
+                    RingTex(new Rect(cx - 22, cy - 22, 44, 44), c);
+                    RingTex(new Rect(cx - 34, cy - 34, 68, 68), new Color(c.r, c.g, c.b, 0.5f));
                     break;
             }
         }
