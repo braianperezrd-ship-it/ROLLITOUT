@@ -62,7 +62,7 @@ namespace RollItOut
         {
             input = controlEnabled ? InputReader.Move() : Vector2.zero;
             // timeScale 0 means the cards / game-over screen is up; Space there selects, it must not queue a dash.
-            if (controlEnabled && Time.timeScale > 0f && DashReady && InputReader.DashPressed()) dashQueued = true;
+            if (controlEnabled && Time.timeScale > 0f && !PauseMenu.BlocksInput && DashReady && InputReader.DashPressed()) dashQueued = true;
             transform.localScale = Vector3.one * up.SizeScale;
             if (stoneShield != null) stoneShield.SetActive(up.stoneSkinCharges > 0);
 

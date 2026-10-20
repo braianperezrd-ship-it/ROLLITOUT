@@ -14,6 +14,9 @@ namespace RollItOut
         public RoundManager round;
 
         public static bool IsPaused { get; private set; }
+        // Frame the menu closed on: the A / Enter that picked Resume must not also act in gameplay (e.g. dash).
+        public static int ClosedFrame { get; private set; } = -1;
+        public static bool BlocksInput => IsPaused || Time.frameCount == ClosedFrame;
 
         static readonly string[] Options = { "RESUME", "RESTART", "QUIT" };
         const float H = 720f;
@@ -53,6 +56,7 @@ namespace RollItOut
         void Resume()
         {
             IsPaused = false;
+            ClosedFrame = Time.frameCount;
             // Always back to 1: a hit-stop that was running when we paused has already timed out on unscaled time.
             Time.timeScale = 1f;
         }
@@ -62,7 +66,7 @@ namespace RollItOut
             switch (i)
             {
                 case 0: Resume(); break;
-                case 1: IsPaused = false; round.Restart(); break;
+                case 1: IsPaused = false; ClosedFrame = Time.frameCount; round.Restart(); break;
                 default: Quit(); break;
             }
         }
