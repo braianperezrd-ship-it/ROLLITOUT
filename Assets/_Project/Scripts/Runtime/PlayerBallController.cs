@@ -47,11 +47,9 @@ namespace RollItOut
         /// <summary>True during a dash and for a short grace window after it, while the ball still carries dash speed.</summary>
         public bool RecentlyDashed => Time.time < lastDashTime + DashDuration + DashGrace;
         const float DashGrace = 0.2f;
-        /// <summary>
-        /// The whole visible dash: the burst plus the time the ball still carries the extra dash speed (the afterimages).
-        /// Phase Dash and Reflect Dash protect for all of it, not just the 0.15 s burst.
-        /// </summary>
-        public bool InDashMotion => RecentlyDashed || (Time.time < lastDashTime + 1f && PreStepVelocity.magnitude > up.MaxSpeed * DashTrailSpeed);
+        /// <summary>Phase Dash and Reflect Dash protect for this long after a dash starts.</summary>
+        public const float DashProtectionTime = 1f;
+        public bool InDashMotion => Time.time < lastDashTime + DashProtectionTime;
         const float DashTrailSpeed = 1.15f;
 
         /// <summary>Velocity we set before the last physics step; the true speed at impact.</summary>

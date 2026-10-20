@@ -67,7 +67,7 @@ rarity (Common 6 : Rare 3 : Epic 1) and never repeat a card within one offer.
 There are 45 cards. The design doc's five XP / elite utility cards (Magnet, Greed, Vacuum, Lucky, Treasure Hunter) wait
 for those systems; their slots hold Regenerate (healing), Deflect, Steamroller (crush), Wrecking Ball (Collision epic) and
 Overdrive (Movement epic). Four Dash cards build on the dash: Quick Dash (-15% recharge, max 3), Double Dash (store 2
-dashes), Phase Dash (no damage while dashing) and Reflect Dash (dashing into a projectile sends it back for 15 damage to the
+dashes), Phase Dash (no damage for 1 s after a dash) and Reflect Dash (for 1 s after a dash, a projectile that hits you is sent back for 15 damage to the
 enemy it hits), plus Slingshot (wall bounces gain +30% speed up to 2.4x max speed and restart the dash burst). Four Health cards: First Aid (common, heal 2 hearts on pick, only
 offered when hurt), Vampire (heal 10% of a heart per enemy death), Last Stand (at 1 heart: +30% damage, +15% speed) and
 Giant Heart (epic, +2 max hearts and full heal). Stacking stat cards have caps (Speed 5, Heavy Ball 5, Big Ball 4, Wound 4) so long runs stay
