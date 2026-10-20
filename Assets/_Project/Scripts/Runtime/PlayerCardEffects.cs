@@ -35,14 +35,14 @@ namespace RollItOut
             if (up.Has(UpgradeType.DustTrail) && speed > 3f && speed >= max * 0.75f && dustTimer <= 0f)
             {
                 dustTimer = 0.12f;
-                DamageZone.Spawn(round, pos, r, 8f, 1f, new Color(0.85f, 0.78f, 0.6f, 0.35f));
+                DamageZone.Spawn(round, ZoneKind.Dust, pos, r, 8f, 1f, new Color(0.85f, 0.78f, 0.6f, 0.35f));
             }
 
             fireTimer -= Time.deltaTime;
             if (up.Has(UpgradeType.RollingFire) && speed >= max * 0.95f && fireTimer <= 0f)
             {
                 fireTimer = 0.1f;
-                DamageZone.Spawn(round, pos, r * 1.1f, 14f, 1.4f, new Color(1f, 0.45f, 0.1f, 0.5f));
+                DamageZone.Spawn(round, ZoneKind.Fire, pos, r * 1.1f, 14f, 1.4f, new Color(1f, 0.45f, 0.1f, 0.5f));
             }
         }
 
@@ -52,10 +52,16 @@ namespace RollItOut
             Vector2 pos = transform.position;
             up.hitCount++;
 
-            if (up.Has(UpgradeType.RollingFury)) up.furyUntil = now + 2f;
+            if (up.Has(UpgradeType.RollingFury))
+            {
+                up.furyStacks = now < up.furyUntil ? Mathf.Min(PlayerUpgradeState.MaxFuryStacks, up.furyStacks + 1) : 1;
+                up.furyUntil = now + 2f;
+            }
             if (up.Has(UpgradeType.Ricochet)) up.ricochetUntil = now + 0.8f;
+            // Chain Impact: this hit already used the bonus; it now counts toward the next one.
+            up.chainStacks = now < up.chainUntil ? Mathf.Min(PlayerUpgradeState.MaxChainStacks, up.chainStacks + 1) : 1;
             up.chainUntil = now + 1.5f;
-            if (up.Has(UpgradeType.SafeRoll)) health.GrantImmunity(0.15f);
+            if (up.Has(UpgradeType.SafeRoll)) health.GrantImmunity(0.4f);
 
             if (up.Has(UpgradeType.Spin))
                 Area(pos, 1.4f * up.SizeScale, 4f, 4f, e, new Color(1f, 0.9f, 0.4f, 0.8f));
@@ -67,12 +73,13 @@ namespace RollItOut
             }
 
             if (up.Has(UpgradeType.Aftershock) && impact >= PlayerUpgradeState.BaseSpeed * 0.9f)
-                DamageZone.Spawn(round, e.transform.position, 1.2f, 10f, 2f, new Color(0.65f, 0.5f, 0.3f, 0.45f));
+                DamageZone.Spawn(round, ZoneKind.Aftershock, e.transform.position, 1.2f, 10f, 2f, new Color(0.65f, 0.5f, 0.3f, 0.45f));
         }
 
         public void OnEnemyKilled(EnemyController e)
         {
             Vector2 pos = e.transform.position;
+            up.roundKills++;
             if (up.Has(UpgradeType.SpreadingWound) && e.Wounded)
             {
                 EnemyController best = null;
@@ -107,21 +114,29 @@ namespace RollItOut
         }
     }
 
+    /// <summary>Damage zone families; zones of one kind don't stack on the same enemy (see EnemyController.ClaimZoneTick).</summary>
+    public enum ZoneKind { Dust, Fire, Blood, Aftershock }
+
     /// <summary>Ground area that damages enemies (never the player) every frame it overlaps them.</summary>
     public class DamageZone : MonoBehaviour
     {
+        // Shared snapshot of the living enemies: zones update one at a time, and kills mid-loop must not break iteration.
+        static readonly List<EnemyController> targets = new List<EnemyController>();
+
         RoundManager round;
+        ZoneKind kind;
+        EnemyController owner; // Blood Trail: the bleeding enemy doesn't hurt itself
         float radius, dps, life, age;
         SpriteRenderer sr;
         Color color;
 
-        public static DamageZone Spawn(RoundManager round, Vector2 pos, float radius, float dps, float life, Color color)
+        public static DamageZone Spawn(RoundManager round, ZoneKind kind, Vector2 pos, float radius, float dps, float life, Color color, EnemyController owner = null)
         {
             var go = new GameObject("DamageZone");
             go.transform.SetParent(round.ProjectileParent, false); // cleared with projectiles between rounds
             go.transform.position = pos;
             var z = go.AddComponent<DamageZone>();
-            z.round = round; z.radius = radius; z.dps = dps; z.life = life; z.color = color;
+            z.round = round; z.kind = kind; z.owner = owner; z.radius = radius; z.dps = dps; z.life = life; z.color = color;
             z.sr = SpriteLib.Add(go.transform, "Area", SpriteLib.Circle, color, -4, Vector3.zero, Vector3.one * radius * 2f);
             return z;
         }
@@ -134,11 +149,13 @@ namespace RollItOut
             sr.color = new Color(color.r, color.g, color.b, color.a * (1f - k * k));
 
             Vector2 pos = transform.position;
-            var targets = new List<EnemyController>(round.Alive);
+            targets.Clear();
+            targets.AddRange(round.Alive);
             foreach (var o in targets)
             {
-                if (o.Dead || !o.Active) continue;
-                if (Vector2.Distance(pos, o.transform.position) <= radius + o.Radius) o.TakeAreaDamage(dps * Time.deltaTime, pos, 0f);
+                if (o == null || o == owner || o.Dead || !o.Active) continue;
+                if (Vector2.Distance(pos, o.transform.position) <= radius + o.Radius && o.ClaimZoneTick(kind))
+                    o.TakeAreaDamage(dps * Time.deltaTime, pos, 0f);
             }
         }
     }

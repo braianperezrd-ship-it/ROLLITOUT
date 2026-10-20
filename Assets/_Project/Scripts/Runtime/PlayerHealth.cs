@@ -7,13 +7,15 @@ namespace RollItOut
 
     /// <summary>
     /// 3 hearts (+Iron Shell) backed by a damage meter (100 units = 1 heart) so damage reduction never rounds away.
-    /// Resolution order: invulnerable / Safe Roll -> Stone Skin -> reductions -> subtract + i-frames -> Second Chance -> death.
+    /// Resolution order: Deflect -> invulnerable / Safe Roll -> Stone Skin -> reductions -> subtract + i-frames -> Second Chance -> death.
     /// </summary>
     public class PlayerHealth : MonoBehaviour
     {
         public const int BaseHearts = 3;
         public const float UnitsPerHeart = 100f;
         public const float InvulnerabilityTime = 0.6f;
+        /// <summary>Deflect: fraction of max speed at which the ball smashes projectiles instead of taking them.</summary>
+        public const float DeflectSpeedFraction = 0.8f;
 
         public SpriteRenderer body;
         public Color baseColor = Color.white;
@@ -22,6 +24,7 @@ namespace RollItOut
         float damageTaken;
         float invulnUntil = -1f, immuneUntil = -1f, lastDamagedTime;
         bool secondChanceUsed;
+        PlayerBallController ctrl;
 
         public bool Dead { get; private set; }
         public bool Invulnerable => Time.time < invulnUntil;
@@ -34,16 +37,34 @@ namespace RollItOut
         public float PartialFraction => Dead ? 0f : (damageTaken % UnitsPerHeart) / UnitsPerHeart;
         public event Action Died;
 
+        void Awake() { ctrl = GetComponent<PlayerBallController>(); }
+
         void Start() { lastDamagedTime = Time.time; }
 
         public void OnRoundStart() { secondChanceUsed = false; }
+
+        /// <summary>Regenerate: give back whole hearts, never above the maximum.</summary>
+        public void Heal(int hearts)
+        {
+            if (Dead || hearts <= 0 || damageTaken <= 0f) return;
+            damageTaken = Mathf.Max(0f, damageTaken - hearts * UnitsPerHeart);
+            Fx.Burst(transform.position, new Color(0.4f, 1f, 0.5f), 16, 5f, 0.18f, 0.5f);
+        }
 
         /// <summary>Safe Roll: brief projectile immunity without the hurt blink.</summary>
         public void GrantImmunity(float seconds) { immuneUntil = Mathf.Max(immuneUntil, Time.time + seconds); }
 
         public HitResult TakeProjectileHit(float projectileDamage, Vector2 hitPos)
         {
-            if (Dead || Invulnerable || Time.time < immuneUntil) return HitResult.Ignored;
+            if (Dead) return HitResult.Ignored;
+
+            if (upgrades.Has(UpgradeType.Deflect) && ctrl != null && ctrl.PreStepVelocity.magnitude >= upgrades.MaxSpeed * DeflectSpeedFraction)
+            {
+                Fx.Burst(hitPos, new Color(1f, 0.7f, 0.3f), 8, 6f, 0.14f, 0.3f);
+                return HitResult.Blocked;
+            }
+
+            if (Invulnerable || Time.time < immuneUntil) return HitResult.Ignored;
 
             if (upgrades.stoneSkinCharges > 0)
             {
