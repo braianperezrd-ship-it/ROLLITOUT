@@ -84,6 +84,8 @@ namespace RollItOut
             rm.health = player.GetComponent<PlayerHealth>();
             rm.ball = player.GetComponent<PlayerBallController>();
             rm.upgrades = upgrades;
+            rm.effects = player.GetComponent<PlayerCardEffects>();
+            rm.effects.round = rm;
 
             var hud = mgrGo.AddComponent<HUD>();
             hud.round = rm;
@@ -172,6 +174,7 @@ namespace RollItOut
             var ctrl = go.AddComponent<PlayerBallController>();
             ctrl.roller = roller;
             ctrl.stoneShield = shield.gameObject;
+            go.AddComponent<PlayerCardEffects>(); // before PlayerCollisionDamage, which looks it up in Awake
             go.AddComponent<PlayerCollisionDamage>();
             return go;
         }

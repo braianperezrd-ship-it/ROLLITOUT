@@ -19,6 +19,7 @@ namespace RollItOut
         /// <summary>Shows a number at a world position. big = direct hit, otherwise a smaller damage-over-time tick.</summary>
         public static void Spawn(Vector3 worldPos, float amount, Color color, bool big)
         {
+            if (amount <= 0f) return;
             if (instance == null)
             {
                 var go = new GameObject("DamageNumbers");

@@ -248,6 +248,79 @@ namespace RollItOut
         }
     }
 
+    /// <summary>Flattened remains left on the floor by a crush kill; fades out after a few seconds.</summary>
+    public class Splat : MonoBehaviour
+    {
+        const float Life = 6f, FadeTime = 1.5f;
+        SpriteRenderer[] parts;
+        Color[] colors;
+        float age;
+
+        public static void Create(Vector2 pos, Color color, float size, Vector2 dir)
+        {
+            var go = new GameObject("Splat");
+            if (Fx.Root != null) go.transform.SetParent(Fx.Root, false);
+            go.transform.position = pos;
+            go.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+            Color dark = Color.Lerp(color, Color.black, 0.35f);
+            dark.a = 0.85f;
+            // Pancake stretched along the roll direction, smeared slightly ahead, plus droplets thrown forward.
+            SpriteLib.Add(go.transform, "Pancake", SpriteLib.Circle, dark, -8, new Vector3(size * 0.15f, 0f, 0f), new Vector3(size * 1.7f, size * 1.15f, 1f));
+            SpriteLib.Add(go.transform, "Core", SpriteLib.Circle, new Color(color.r, color.g, color.b, 0.7f), -7, Vector3.zero, new Vector3(size * 1.1f, size * 0.7f, 1f));
+            int drops = 5;
+            for (int i = 0; i < drops; i++)
+            {
+                float a = UnityEngine.Random.Range(-70f, 70f) * Mathf.Deg2Rad;
+                float d = size * UnityEngine.Random.Range(0.9f, 1.5f);
+                SpriteLib.Add(go.transform, "Drop", SpriteLib.Circle, dark, -8, new Vector3(Mathf.Cos(a) * d, Mathf.Sin(a) * d, 0f), Vector3.one * size * UnityEngine.Random.Range(0.12f, 0.25f));
+            }
+            var sp = go.AddComponent<Splat>();
+            sp.parts = go.GetComponentsInChildren<SpriteRenderer>();
+            sp.colors = new Color[sp.parts.Length];
+            for (int i = 0; i < sp.parts.Length; i++) sp.colors[i] = sp.parts[i].color;
+
+            // Debris squirts out sideways from under the ball.
+            Vector2 side = new Vector2(-dir.y, dir.x);
+            for (int i = 0; i < 10; i++)
+            {
+                Vector2 v = (side * (i % 2 == 0 ? 1f : -1f) * UnityEngine.Random.Range(4f, 8f)) + dir * UnityEngine.Random.Range(1f, 4f);
+                Spark.Create(pos, v, color, 0.18f * UnityEngine.Random.Range(0.6f, 1.2f), UnityEngine.Random.Range(0.25f, 0.45f));
+            }
+        }
+
+        void Update()
+        {
+            age += Time.deltaTime;
+            if (age >= Life) { Destroy(gameObject); return; }
+            float k = Mathf.Clamp01((Life - age) / FadeTime);
+            for (int i = 0; i < parts.Length; i++) parts[i].color = new Color(colors[i].r, colors[i].g, colors[i].b, colors[i].a * k);
+        }
+    }
+
+    /// <summary>A few frames of near-frozen time on a crush so the impact lands. Never overrides a real pause.</summary>
+    public class HitStop : MonoBehaviour
+    {
+        const float SlowScale = 0.05f;
+        static HitStop instance;
+        float left;
+
+        public static void Freeze(float duration)
+        {
+            bool ours = instance != null && instance.left > 0f;
+            if (!ours && Time.timeScale < 1f) return; // paused (cards / game over): leave it alone
+            if (instance == null) instance = new GameObject("HitStop").AddComponent<HitStop>();
+            instance.left = Mathf.Max(instance.left, duration);
+            Time.timeScale = SlowScale;
+        }
+
+        void Update()
+        {
+            if (left <= 0f) return;
+            left -= Time.unscaledDeltaTime;
+            if (left <= 0f && Mathf.Approximately(Time.timeScale, SlowScale)) Time.timeScale = 1f;
+        }
+    }
+
     /// <summary>Small screen shake, reserved for strong impacts.</summary>
     public class CameraShake : MonoBehaviour
     {
