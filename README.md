@@ -37,3 +37,15 @@ Assets/_Project/
 ```
 
 Images, audio, fonts and other binaries are stored with Git LFS (see `.gitattributes`).
+
+## Playing the prototype
+
+Open `Assets/_Project/Scenes/Main.unity` (or any scene) and press **Play**. `GameBootstrap` builds the arena,
+player, enemies and UI at runtime, so there is no scene wiring or art to import.
+
+- **Move:** WASD / arrow keys / gamepad left stick. There is no attack button: crash into enemies.
+- **Dodge** projectiles (the only thing that hurts you). **Pick 1 of 3 upgrade cards** after each round with the mouse or keys `1` `2` `3`.
+- **Restart** after game over with `R` / `Enter` / gamepad A or the button.
+
+Game code is in `Assets/_Project/Scripts/Runtime/` (namespace `RollItOut`). Tuning values live at the top of each
+script (`PlayerBallController`, `PlayerCollisionDamage`, `PlayerHealth`, `EnemyDefs`, `RoundManager.Composition`).
