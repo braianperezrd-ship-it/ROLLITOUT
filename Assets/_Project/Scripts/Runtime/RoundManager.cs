@@ -68,7 +68,7 @@ namespace RollItOut
             ball.controlEnabled = true;
 
             Banner = "ROUND " + n;
-            BannerSub = n == 4 ? "New: Skeleton Archers - dodge the shots!"
+            BannerSub = n == 2 ? "New: Skeleton Archers - dodge the shots!"
                       : n == 5 ? "New: Slimes split when they die"
                       : n == 6 ? "New: Goblin Shamans keep their distance"
                       : "";
@@ -84,8 +84,8 @@ namespace RollItOut
             var l = new List<KeyValuePair<EnemyType, int>>();
             void Add(EnemyType t, int c) { if (c > 0) l.Add(new KeyValuePair<EnemyType, int>(t, c)); }
             if (n == 1) { Add(EnemyType.Skeleton, 5); }
-            else if (n == 2) { Add(EnemyType.Skeleton, 3); Add(EnemyType.Goblin, 3); }
-            else if (n == 3) { Add(EnemyType.Skeleton, 3); Add(EnemyType.Goblin, 3); Add(EnemyType.Orc, 1); }
+            else if (n == 2) { Add(EnemyType.Skeleton, 3); Add(EnemyType.Goblin, 3); Add(EnemyType.Archer, 1); }
+            else if (n == 3) { Add(EnemyType.Skeleton, 3); Add(EnemyType.Goblin, 3); Add(EnemyType.Orc, 1); Add(EnemyType.Archer, 2); }
             else if (n == 4) { Add(EnemyType.Skeleton, 3); Add(EnemyType.Goblin, 2); Add(EnemyType.Orc, 1); Add(EnemyType.Archer, 2); }
             else if (n == 5) { Add(EnemyType.Skeleton, 2); Add(EnemyType.Goblin, 2); Add(EnemyType.Orc, 1); Add(EnemyType.Archer, 2); Add(EnemyType.Slime, 2); }
             else
