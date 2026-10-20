@@ -388,13 +388,25 @@ namespace RollItOut
     }
 
     /// <summary>Small screen shake, reserved for strong impacts.</summary>
+    /// <summary>Follows the player (clamped so the view never leaves the arena) and adds screen shake on top.</summary>
     public class CameraShake : MonoBehaviour
     {
         static CameraShake instance;
         float amp, dur, left;
         Vector3 basePos;
+        Transform target;
+        Vector2 arenaHalf;
+        Camera cam;
 
-        void Awake() { instance = this; basePos = transform.position; }
+        void Awake() { instance = this; basePos = transform.position; cam = GetComponent<Camera>(); }
+
+        public static void Follow(Transform target, Vector2 arenaHalf)
+        {
+            if (instance == null) return;
+            instance.target = target;
+            instance.arenaHalf = arenaHalf;
+            instance.basePos = instance.Clamp(target.position); // snap on (re)start instead of panning in
+        }
 
         public static void Shake(float amplitude, float duration)
         {
@@ -404,8 +416,23 @@ namespace RollItOut
             instance.left = duration;
         }
 
+        Vector3 Clamp(Vector2 p)
+        {
+            const float margin = 1.5f; // show a strip past the wall so the border reads
+            float vy = cam != null ? cam.orthographicSize : 7.2f;
+            float vx = vy * (cam != null ? cam.aspect : 16f / 9f);
+            float mx = Mathf.Max(0f, arenaHalf.x + margin - vx), my = Mathf.Max(0f, arenaHalf.y + margin - vy);
+            return new Vector3(Mathf.Clamp(p.x, -mx, mx), Mathf.Clamp(p.y, -my, my), basePos.z);
+        }
+
         void LateUpdate()
         {
+            if (target != null)
+            {
+                Vector3 goal = Clamp(target.position);
+                basePos = Vector3.Lerp(basePos, goal, 1f - Mathf.Exp(-10f * Time.unscaledDeltaTime));
+            }
+
             if (left > 0f)
             {
                 left -= Time.unscaledDeltaTime;

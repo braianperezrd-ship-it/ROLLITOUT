@@ -11,7 +11,7 @@ namespace RollItOut
         public const float ClearDelay = 0.7f;
         const float SelectFlashTime = 0.35f;
 
-        public Vector2 ArenaHalf = new Vector2(11f, 6f);
+        public Vector2 ArenaHalf = new Vector2(55f, 30f);
         public Transform EnemyParent, ProjectileParent;
         public Transform player;
         public PlayerHealth health;
