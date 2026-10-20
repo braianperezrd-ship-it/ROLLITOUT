@@ -44,7 +44,7 @@ Open `Assets/_Project/Scenes/Main.unity` (or any scene) and press **Play**. `Gam
 player, enemies and UI at runtime, so there is no scene wiring or art to import.
 
 - **Move:** WASD / arrow keys / gamepad left stick. There is no attack button: crash into enemies.
-- **Crush:** roll fast over an enemy no bigger than your ball and you flatten it: you keep your momentum, it can't move
+- **Crush:** roll fast over an enemy no bigger than your ball and you flatten it (dashing doesn't crush, it crashes into them): you keep your momentum, it can't move
   or shoot for a moment, and a lethal crush leaves a splat. Bigger enemies (Orc, and Slime until you take Big Ball) still bounce you back.
 - **Speed = damage:** crash damage scales with how fast you hit (x1 at base speed, up to x2.5), so dash hits land hardest.
 - **Bank shots:** dash into a wall and you bounce off it, keeping your momentum (+15% speed, capped) and banking a charge (up to 3,

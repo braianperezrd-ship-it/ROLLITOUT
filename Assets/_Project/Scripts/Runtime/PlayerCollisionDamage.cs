@@ -4,8 +4,9 @@ using UnityEngine;
 namespace RollItOut
 {
     /// <summary>
-    /// Ball-to-enemy damage. Enemies no bigger than the ball get crushed: the ball rolls over them, they go flat,
-    /// and a lethal crush leaves a splat (crushable size: PlayerUpgradeState.CrushSizeRatio). Bigger enemies still take
+    /// Ball-to-enemy damage. Enemies no bigger than the ball get crushed when the ball rolls over them: they go flat,
+    /// and a lethal crush leaves a splat (crushable size: PlayerUpgradeState.CrushSizeRatio). A dash never crushes, it
+    /// slams into the enemy as a crash instead. Bigger enemies still take
     /// a crash with knockback and recoil, unless Wrecking Ball ploughs through them at full speed.
     /// Crash damage scales with impact speed, and dashing into an arena wall bounces off it, banking speed and bonus damage.
     /// Enemy contact never hurts the player.
@@ -135,7 +136,8 @@ namespace RollItOut
             bonus *= Mathf.Clamp(impact / PlayerUpgradeState.BaseSpeed, MinSpeedDamage, MaxSpeedDamage);
             if (up.WoundDuration > 0f) e.ApplyWound(up.WoundDuration, up.WoundDamagePerSecond);
 
-            if (impact >= MinCrushSpeed && e.Def.size <= up.SizeScale * up.CrushSizeRatio)
+            // Only a roll crushes; a dash (and its trailing dash speed) crashes into the enemy instead.
+            if (!ctrl.RecentlyDashed && impact >= MinCrushSpeed && e.Def.size <= up.SizeScale * up.CrushSizeRatio)
             {
                 Crush(e, pre, up.CollisionDamage * bonus * CrushDamageMultiplier * up.CrushDamageMultiplier);
                 if (effects != null) effects.OnEnemyHit(e, impact);
