@@ -21,7 +21,7 @@ namespace RollItOut
         const float NearSpawnShare = 0.7f;
         const float NearSpawnMin = 14f, NearSpawnMax = 24f, MinSpawnDistance = 8f;
 
-        public Vector2 ArenaHalf = new Vector2(55f, 30f);
+        public Vector2 ArenaHalf = new Vector2(275f, 150f);
         public Transform EnemyParent, ProjectileParent, OrbParent;
         public Transform player;
         public PlayerHealth health;
