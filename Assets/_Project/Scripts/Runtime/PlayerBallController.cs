@@ -47,6 +47,12 @@ namespace RollItOut
         /// <summary>True during a dash and for a short grace window after it, while the ball still carries dash speed.</summary>
         public bool RecentlyDashed => Time.time < lastDashTime + DashDuration + DashGrace;
         const float DashGrace = 0.2f;
+        /// <summary>
+        /// The whole visible dash: the burst plus the time the ball still carries the extra dash speed (the afterimages).
+        /// Phase Dash and Reflect Dash protect for all of it, not just the 0.15 s burst.
+        /// </summary>
+        public bool InDashMotion => RecentlyDashed || (Time.time < lastDashTime + 1f && PreStepVelocity.magnitude > up.MaxSpeed * DashTrailSpeed);
+        const float DashTrailSpeed = 1.15f;
 
         /// <summary>Velocity we set before the last physics step; the true speed at impact.</summary>
         public Vector2 PreStepVelocity { get; private set; }
@@ -149,7 +155,7 @@ namespace RollItOut
             PreStepVelocity = v;
 
             // Motion blur: afterimages while dashing and while still bleeding off the extra speed.
-            if (sprites != null && (dashTimer > 0f || v.magnitude > up.MaxSpeed * 1.15f))
+            if (sprites != null && (dashTimer > 0f || v.magnitude > up.MaxSpeed * DashTrailSpeed))
                 Ghost.Create(sprites, new Color(0.6f, 0.85f, 1f), dashTimer > 0f ? 0.5f : 0.3f, 0.18f);
         }
 

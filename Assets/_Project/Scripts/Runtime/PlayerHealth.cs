@@ -73,7 +73,8 @@ namespace RollItOut
         {
             if (Dead) return HitResult.Ignored;
 
-            bool dashing = ctrl != null && ctrl.RecentlyDashed;
+            if (ctrl == null) ctrl = GetComponent<PlayerBallController>();
+            bool dashing = ctrl != null && ctrl.InDashMotion;
             if (dashing && upgrades.Has(UpgradeType.ReflectDash))
             {
                 Fx.Burst(hitPos, new Color(0.6f, 0.9f, 1f), 10, 6f, 0.14f, 0.3f);
