@@ -26,6 +26,11 @@ namespace RollItOut
         public int chainStacks, furyStacks;
         /// <summary>Overdrive: kills this round.</summary>
         public int roundKills;
+        /// <summary>Wall bounces banked for the next enemy hit, and when they fade (Time.time).</summary>
+        public int wallCharges;
+        public float wallChargeUntil = -1f;
+
+        public int ActiveWallCharges => Time.time < wallChargeUntil ? wallCharges : 0;
 
         int[] Stacks => stacks ?? (stacks = new int[CardDefs.Count]);
 
@@ -42,7 +47,8 @@ namespace RollItOut
         public void OnRoundStart()
         {
             furyUntil = rushUntil = ricochetUntil = chainUntil = -1f;
-            chainStacks = furyStacks = roundKills = 0;
+            chainStacks = furyStacks = roundKills = wallCharges = 0;
+            wallChargeUntil = -1f;
             impactArmed = false;
             if (Has(UpgradeType.ReinforcedCore)) stoneSkinCharges = Mathf.Max(stoneSkinCharges, 1);
         }
