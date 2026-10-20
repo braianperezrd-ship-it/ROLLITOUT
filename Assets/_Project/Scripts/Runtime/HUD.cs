@@ -48,7 +48,7 @@ namespace RollItOut
             Text(new Rect(W * 0.5f - 150, 8, 300, 36), "ROUND " + round.Round, mid, Color.white);
             Text(new Rect(W - 230, 8, 220, 28), "Enemies: " + round.AliveCount, small, new Color(1f, 1f, 1f, 0.85f));
             DrawStacks(W);
-            if (round.State == GameState.Playing) DrawDash(W);
+            if (round.State == GameState.Playing) DrawDash();
 
             if (round.State == GameState.Playing && round.BannerTime > 0f)
             {
@@ -78,24 +78,25 @@ namespace RollItOut
             }
             if (upgrades.stoneSkinCharges > 0)
             {
-                var r = new Rect(14, 56, 28, 28);
+                var r = new Rect(14, 76, 28, 28);
                 Disc(r, new Color(0.7f, 0.72f, 0.78f));
                 RingTex(r, Color.black);
-                Text(new Rect(46, 56, 60, 28), "x" + upgrades.stoneSkinCharges, small, Color.white);
+                Text(new Rect(46, 76, 60, 28), "x" + upgrades.stoneSkinCharges, small, Color.white);
             }
-            float y = 88;
+            float y = 108;
             if (health.SecondChanceReady) { Text(new Rect(10, y, 160, 22), "Second Chance ready", tiny, new Color(1f, 0.9f, 0.4f)); y += 20; }
             if (health.HardenedActive) Text(new Rect(10, y, 160, 22), "Hardened", tiny, new Color(0.8f, 0.85f, 1f));
         }
 
         PlayerBallController ball;
 
-        void DrawDash(float W)
+        void DrawDash()
         {
             if (ball == null) ball = upgrades.GetComponent<PlayerBallController>();
             if (ball == null) return;
-            const float bw = 220f, bh = 14f;
-            var r = new Rect(W * 0.5f - bw * 0.5f, H - 44, bw, bh);
+            // Sits right under the hearts, as wide as the heart row.
+            float bw = Mathf.Max(126f, health.MaxHearts * 44f - 6f);
+            var r = new Rect(14, 58, bw, 10f);
             Fill(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), new Color(0f, 0f, 0f, 0.75f));
             Fill(r, new Color(0.15f, 0.17f, 0.22f));
             bool ready = ball.DashReady;
@@ -103,17 +104,17 @@ namespace RollItOut
             float pulse = ready ? 0.85f + 0.15f * Mathf.Sin(Time.unscaledTime * 6f) : 1f;
             Color c = ready ? new Color(0.55f * pulse, 0.85f * pulse, 1f) : new Color(0.35f, 0.5f, 0.7f);
             Fill(new Rect(r.x, r.y, r.width * ball.DashCharge, r.height), c);
-            Text(new Rect(r.x, r.y - 22, r.width, 20), ready ? "DASH  [Space / Shift / A]" : "DASH", tiny, new Color(1f, 1f, 1f, ready ? 0.9f : 0.55f));
 
             // Wall bounce charges banked for the next hit, as pips right of the dash bar.
             int charges = upgrades.ActiveWallCharges;
             for (int i = 0; i < PlayerCollisionDamage.MaxWallCharges; i++)
             {
-                var p = new Rect(r.xMax + 12 + i * 20, r.y - 2, 16, 16);
+                var p = new Rect(r.xMax + 12 + i * 18, r.y - 2, 14, 14);
                 Disc(new Rect(p.x - 2, p.y - 2, p.width + 4, p.height + 4), new Color(0f, 0f, 0f, 0.75f));
                 Disc(p, i < charges ? new Color(1f, 0.55f - 0.12f * i, 0.15f) : new Color(0.2f, 0.18f, 0.16f));
             }
-            if (charges > 0) Text(new Rect(r.xMax + 8, r.y - 22, 80, 20), "BANK x" + charges, tiny, new Color(1f, 0.7f, 0.3f));
+            float pipsEnd = r.xMax + 12 + PlayerCollisionDamage.MaxWallCharges * 18;
+            if (charges > 0) Text(new Rect(pipsEnd, r.y - 5, 80, 20), "BANK x" + charges, tiny, new Color(1f, 0.7f, 0.3f));
         }
 
         void DrawStacks(float W)
