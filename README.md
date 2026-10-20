@@ -49,16 +49,23 @@ player, enemies and UI at runtime, so there is no scene wiring or art to import.
 - **Speed = damage:** crash damage scales with how fast you hit (x1 at base speed, up to x2.5), so dash hits land hardest.
 - **Bank shots:** dash into a wall and you bounce off it, keeping your momentum (+15% speed, capped) and banking a charge (up to 3,
   shown as orange pips next to the dash bar). Your next enemy hit within 2 s spends them for +25% damage each.
-- **Dodge** projectiles (the only thing that hurts you). Each enemy attacks its own way, and its wind-up shows which:
-  Skeleton and Small Slime fire one bolt, Goblin a quick 3-shot volley (thick line), Orc a wide 5-shot cone, Archer a tight
-  3-shot spread, Slime a ring of 8 in every direction (swelling ring), and Shaman a slow seeker that curves after you briefly.
+- **Dodge** projectiles (the only thing that hurts you). Every enemy has 2-3 attacks, picks one at random (never the same twice
+  in a row) and each attack has its own wind-up and cooldown. The wind-up shows the pattern: one line for a bolt, a thick line
+  for a volley, a line per shot for a cone, parallel lines for a wall, two cone edges for a shotgun, a swelling ring for a ring
+  and a spinning ring for a spiral. The shot's shape shows how it flies: diamond = straight, thin needle = starts slow then
+  speeds up, orb = weaves side to side, orb with a dark shell = pops into 6 small shots, oval ring = boomerang that comes back,
+  square = ricochets off walls twice.
+  - Skeleton: bolt / 2 accelerating needles / ricochet. Small Slime: bolt / weaving orb.
+  - Goblin: 3-shot volley / 5-pellet shotgun / quick pair of weaving orbs. Orc: 5-shot cone / wall of 5 / big splitting blob.
+  - Slime: ring of 8 / ring of 6 weaving orbs / splitting blob. Archer: 3-shot spread / fast needle / 2 ricochets.
+  - Shaman: seeker that curves after you / two-armed spiral stream / 3 boomerangs.
 - **Pick 1 of 3 upgrade cards** after each round with the mouse or keys `1` `2` `3`.
 - **Pause:** gamepad Start, `Esc` or `P` during a round opens the pause menu (Resume / Restart / Quit). Navigate with the stick, d-pad or W/S
   and pick with A / `Enter` or the mouse; Start, `Esc` or B closes it.
 - **Restart** after game over with `R` / `Enter` / gamepad A or the button.
 
 Game code is in `Assets/_Project/Scripts/Runtime/` (namespace `RollItOut`). Tuning values live at the top of each
-script (`PlayerBallController`, `PlayerCollisionDamage` (crush thresholds), `PlayerHealth`, `EnemyDefs`, `RoundManager.Composition` + `EnemyCountMultiplier`).
+script (`PlayerBallController`, `PlayerCollisionDamage` (crush thresholds), `PlayerHealth`, `EnemyDefs` (attacks per enemy), `Projectile` (shot kinds), `RoundManager.Composition` + `EnemyCountMultiplier`).
 
 Upgrade cards are data in `CardDefs` (`UpgradeManager.cs`): name, category, rarity, text, stack limit and icon. Stat cards
 are read in `PlayerUpgradeState`; on-hit, on-kill and trail cards run in `PlayerCardEffects`. Rewards are weighted by
