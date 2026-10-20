@@ -20,7 +20,7 @@ namespace RollItOut
         const float NearSpawnMin = 14f, NearSpawnMax = 24f, MinSpawnDistance = 8f;
 
         public Vector2 ArenaHalf = new Vector2(55f, 30f);
-        public Transform EnemyParent, ProjectileParent;
+        public Transform EnemyParent, ProjectileParent, OrbParent;
         public Transform player;
         public PlayerHealth health;
         public PlayerBallController ball;
@@ -91,8 +91,8 @@ namespace RollItOut
             GrantCard("CHECKPOINT " + number + "/" + Checkpoint.Count + " COMPLETE");
         }
 
-        /// <summary>XP needed to go from level n to n+1: 32, 52, 80, 116, 160... (scaled with EnemyCountMultiplier so levels come at the same pace).</summary>
-        public static int XpForLevel(int n) { return EnemyCountMultiplier * (8 + 4 * (n - 1) + (n - 1) * (n - 1)); }
+        /// <summary>XP needed to go from level n to n+1: 20, 32, 50, 72, 100... (scaled with EnemyCountMultiplier; ~40% less than before so levels come faster).</summary>
+        public static int XpForLevel(int n) { return EnemyCountMultiplier * 5 * (8 + 4 * (n - 1) + (n - 1) * (n - 1)) / 8; }
 
         static int XpFor(EnemyDef d) { return Mathf.Max(1, Mathf.RoundToInt(d.hp / 10f)); }
 
@@ -218,7 +218,7 @@ namespace RollItOut
         public void OnEnemyDied(EnemyController e)
         {
             alive.Remove(e);
-            AddXp(XpFor(e.Def));
+            XpOrb.Spawn(OrbParent, e.transform.position, XpFor(e.Def), this, player); // XP only counts once the ball picks the orb up
             if (effects != null) effects.OnEnemyKilled(e); // may kill more enemies (Explosive Impact)
             if (State == GameState.Playing && alive.Count == 0) BeginClear();
         }
@@ -251,6 +251,7 @@ namespace RollItOut
                     clearTimer -= Time.deltaTime;
                     if (clearTimer <= 0f)
                     {
+                        XpOrb.CollectAll(); // whatever didn't reach the ball yet still counts before the cards / next round
                         if (PendingCards > 0) EnterReward();
                         else StartRound(Round + 1);
                     }
