@@ -22,6 +22,7 @@ namespace RollItOut
         public GameState State { get; private set; } = GameState.Playing;
         public List<UpgradeType> Offered { get; private set; } = new List<UpgradeType>();
         public int Selected { get; private set; } = -1;
+        public int Highlight;
         public string Banner { get; private set; } = "";
         public string BannerSub { get; private set; } = "";
         public float BannerTime { get; private set; }
@@ -156,6 +157,8 @@ namespace RollItOut
                     {
                         Offered = upgrades.Roll(3);
                         Selected = -1;
+                        Highlight = 1;
+                        InputReader.NavStep(); // swallow the stick state held from play
                         State = GameState.Reward;
                         Time.timeScale = 0f; // pause combat while the cards are open
                     }
@@ -165,6 +168,8 @@ namespace RollItOut
                     {
                         for (int i = 0; i < Offered.Count; i++)
                             if (InputReader.DigitPressed(i)) Select(i);
+                        Highlight = Mathf.Clamp(Highlight + InputReader.NavStep(), 0, Offered.Count - 1);
+                        if (InputReader.SubmitPressed()) Select(Highlight);
                     }
                     else if (Time.unscaledTime >= selectAt)
                     {

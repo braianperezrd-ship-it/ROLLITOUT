@@ -99,6 +99,7 @@ namespace RollItOut
             Fill(new Rect(0, 0, W, H), new Color(0f, 0f, 0.03f, 0.72f));
             Text(new Rect(0, 90, W, 60), "CHOOSE AN UPGRADE", big, Color.white);
 
+            Text(new Rect(0, 150, W, 30), "Click, press 1 / 2 / 3, or stick left/right + A", small, new Color(1f, 1f, 1f, 0.6f));
             const float cw = 250f, ch = 310f, gap = 32f;
             int n = round.Offered.Count;
             float x0 = (W - (n * cw + (n - 1) * gap)) * 0.5f;
@@ -111,9 +112,10 @@ namespace RollItOut
                 bool chosen = round.Selected == i;
                 var r = new Rect(x0 + i * (cw + gap), 190, cw, ch);
                 bool hover = round.Selected < 0 && r.Contains(e.mousePosition);
+                if (hover && e.type == EventType.MouseMove) round.Highlight = i;
 
                 if (chosen) { float g = round.SelectProgress * 10f; r = new Rect(r.x - g, r.y - g, r.width + 2 * g, r.height + 2 * g); }
-                bool lit = hover || chosen;
+                bool lit = chosen || (round.Selected < 0 && round.Highlight == i);
                 Fill(new Rect(r.x - 4, r.y - 4, r.width + 8, r.height + 8), lit ? Color.white : info.color);
                 Fill(r, lit ? new Color(0.2f, 0.2f, 0.27f) : new Color(0.1f, 0.1f, 0.15f));
 

@@ -127,6 +127,46 @@ namespace RollItOut
             return v.sqrMagnitude > 1f ? v.normalized : v;
         }
 
+
+        static int lastNav;
+
+        /// <summary>-1 / +1 once per left/right press (d-pad, stick, A/D, arrows); 0 otherwise.</summary>
+        public static int NavStep()
+        {
+            float x = 0f;
+#if ENABLE_LEGACY_INPUT_MANAGER
+            x = Input.GetAxisRaw("Horizontal");
+#elif ENABLE_INPUT_SYSTEM
+            var kb = Keyboard.current;
+            if (kb != null)
+            {
+                if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) x -= 1f;
+                if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) x += 1f;
+            }
+            var pad = Gamepad.current;
+            if (pad != null && x == 0f) x = pad.leftStick.ReadValue().x + pad.dpad.ReadValue().x;
+#endif
+            int dir = x > 0.6f ? 1 : x < -0.6f ? -1 : 0;
+            int step = dir != 0 && dir != lastNav ? dir : 0;
+            lastNav = dir;
+            return step;
+        }
+
+        /// <summary>Gamepad A / Enter / Space.</summary>
+        public static bool SubmitPressed()
+        {
+#if ENABLE_LEGACY_INPUT_MANAGER
+            return Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.JoystickButton0);
+#elif ENABLE_INPUT_SYSTEM
+            var kb = Keyboard.current;
+            var pad = Gamepad.current;
+            return (kb != null && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame))
+                || (pad != null && pad.buttonSouth.wasPressedThisFrame);
+#else
+            return false;
+#endif
+        }
+
         public static bool DigitPressed(int index)
         {
 #if ENABLE_LEGACY_INPUT_MANAGER
