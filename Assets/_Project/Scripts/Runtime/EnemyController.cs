@@ -54,6 +54,7 @@ namespace RollItOut
         public float nextCollisionHitTime;
         public CircleCollider2D Collider => col;
         public const float FlatDuration = 0.9f;
+        public const float HitFlashTime = 0.12f;
 
         RoundManager round;
         Transform player;
@@ -61,9 +62,11 @@ namespace RollItOut
         Rigidbody2D rb;
         CircleCollider2D col;
         SpriteRenderer body;
+        SpriteRenderer[] parts;   // every body sprite, so a hit flashes the whole enemy white
+        Color[] partColors;
         Transform vis, hpFill, telegraph;
         SpriteRenderer telegraphSr;
-        float hp, maxHp, spawnTimer, spawnTotal, flashTimer, woundLeft, woundTick, woundDps, bloodTimer, flatTimer;
+        float hp, maxHp, spawnTimer, spawnTotal, flashTimer, woundLeft, woundTick, woundDps, zoneDamage, zoneTimer, bloodTimer, flatTimer;
         bool crushedToDeath;
         Vector2 crushDir = Vector2.right;
         Vector2 knockVel;
@@ -111,6 +114,10 @@ namespace RollItOut
                 SpriteLib.Add(vis, "EarR", SpriteLib.Diamond, baseColor, 4, new Vector3(0.5f, 0.1f, 0f) * s, new Vector3(0.45f, 0.3f, 1f) * s);
             }
 
+            parts = GetComponentsInChildren<SpriteRenderer>();
+            partColors = new Color[parts.Length];
+            for (int i = 0; i < parts.Length; i++) partColors[i] = parts[i].color;
+
             // HP bar (always above the body, never rotates).
             float y = s * 0.5f + 0.22f;
             SpriteLib.Add(transform, "HpBack", SpriteLib.Square, new Color(0f, 0f, 0f, 0.7f), 8, new Vector3(0f, y, 0f), new Vector3(s + 0.06f, 0.14f, 1f));
@@ -146,6 +153,8 @@ namespace RollItOut
                 return;
             }
 
+            FlushZoneNumber(dt);
+
             if (woundLeft > 0f)
             {
                 woundLeft -= dt;
@@ -154,7 +163,7 @@ namespace RollItOut
                 {
                     woundTick -= 0.5f;
                     Fx.Burst(transform.position, new Color(0.8f, 0.05f, 0.1f), 2, 2f, 0.12f, 0.3f);
-                    Damage(woundDps * 0.5f);
+                    Damage(woundDps * 0.5f, WoundNumber, false);
                     if (Dead) return;
                 }
                 // Blood Trail: a wounded enemy on the move drips puddles that hurt other enemies.
@@ -166,14 +175,19 @@ namespace RollItOut
                 }
             }
 
-            if (flashTimer > 0f) { flashTimer -= dt; body.color = Color.white; }
-            else body.color = woundLeft > 0f ? Color.Lerp(baseColor, new Color(0.85f, 0.1f, 0.15f), 0.4f) : baseColor;
+            if (flashTimer > 0f)
+            {
+                flashTimer -= dt;
+                bool on = flashTimer > 0f;
+                for (int i = 0; i < parts.Length; i++) parts[i].color = on ? Color.white : partColors[i];
+            }
+            if (flashTimer <= 0f) body.color = woundLeft > 0f ? Color.Lerp(baseColor, new Color(0.85f, 0.1f, 0.15f), 0.4f) : baseColor;
 
             if (flatTimer > 0f)
             {
                 flatTimer -= dt;
                 UpdateFlatVisual();
-                body.color = Color.Lerp(body.color, Color.black, 0.25f);
+                if (flashTimer <= 0f) body.color = Color.Lerp(body.color, Color.black, 0.25f);
                 return; // pancakes don't shoot
             }
 
@@ -286,8 +300,8 @@ namespace RollItOut
         {
             if (Dead) return;
             Fx.Burst(transform.position, Def.color, 6, 5f, 0.15f, 0.3f);
-            flashTimer = 0.1f;
-            Damage(damage);
+            flashTimer = HitFlashTime;
+            Damage(damage, Color.white, true);
             if (Dead) return;
             // Knockback scales with impact speed (clamped); heavy enemies barely move.
             knockVel = dir * Mathf.Clamp(impactSpeed * 2f, 4f, 16f) * knockbackMul / Def.knockbackResistance;
@@ -303,6 +317,9 @@ namespace RollItOut
                 knockVel = (d.sqrMagnitude > 0.0001f ? d.normalized : Random.insideUnitCircle.normalized) * push / Def.knockbackResistance;
                 flashTimer = 0.08f;
             }
+            if (push > 0f) { Damage(amount, AreaNumber, false); return; }
+            // Lingering zones hurt every frame: bank it and show one number per NumberBatch instead of a stream.
+            zoneDamage += amount;
             Damage(amount);
         }
 
@@ -312,7 +329,7 @@ namespace RollItOut
             if (Dead) return false;
             flatTimer = FlatDuration;
             crushDir = dir.sqrMagnitude > 0.0001f ? dir.normalized : Vector2.right;
-            flashTimer = 0.06f;
+            flashTimer = HitFlashTime;
             if (telegraphing)
             {
                 telegraphing = false;
@@ -323,7 +340,7 @@ namespace RollItOut
             UpdateFlatVisual();
             Fx.Burst(transform.position, Def.color, 8, 6f, 0.14f, 0.3f);
             crushedToDeath = true;
-            Damage(damage);
+            Damage(damage, Color.white, true);
             crushedToDeath = false;
             return Dead;
         }
@@ -348,6 +365,27 @@ namespace RollItOut
                 vis.localRotation = Quaternion.Euler(0f, 0f, ang * (1f - t));
             }
             if (flatTimer <= 0f) { vis.localScale = Vector3.one; vis.localRotation = Quaternion.identity; }
+        }
+
+        static readonly Color WoundNumber = new Color(1f, 0.35f, 0.35f);
+        static readonly Color AreaNumber = new Color(1f, 0.8f, 0.3f);
+        const float NumberBatch = 0.4f;
+
+        void FlushZoneNumber(float dt)
+        {
+            zoneTimer -= dt;
+            if (zoneTimer > 0f || zoneDamage < 1f) return;
+            DamageNumbers.Spawn(PopupPos(), zoneDamage, AreaNumber, false);
+            zoneDamage = 0f;
+            zoneTimer = NumberBatch;
+        }
+
+        Vector3 PopupPos() { return transform.position + Vector3.up * (Def.size * 0.5f + 0.45f); }
+
+        void Damage(float amount, Color numberColor, bool big)
+        {
+            DamageNumbers.Spawn(PopupPos(), amount, numberColor, big);
+            Damage(amount);
         }
 
         void Damage(float amount)
