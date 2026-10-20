@@ -84,6 +84,39 @@ namespace RollItOut
             GrantCard("CHECKPOINT " + number + "/" + Checkpoint.Count + " COMPLETE");
         }
 
+        /// <summary>XP needed to go from level n to n+1: 8, 13, 20, 29, 40...</summary>
+        public static int XpForLevel(int n) { return 8 + 4 * (n - 1) + (n - 1) * (n - 1); }
+
+        static int XpFor(EnemyDef d) { return Mathf.Max(1, Mathf.RoundToInt(d.hp / 10f)); }
+
+        public void AddXp(int amount)
+        {
+            Xp += amount;
+            while (Xp >= XpNeeded)
+            {
+                Xp -= XpNeeded;
+                Level++;
+                GrantCard("LEVEL UP!  LV " + Level);
+            }
+        }
+
+        /// <summary>Queues one card pick; shown right away (or after the round clears if that's already under way).</summary>
+        public void GrantCard(string title = "CHOOSE AN UPGRADE")
+        {
+            PendingCards++;
+            if (RewardTitle != title && State != GameState.Reward) RewardTitle = title;
+        }
+
+        void EnterReward()
+        {
+            Offered = upgrades.Roll(3);
+            Selected = -1;
+            Highlight = 1;
+            InputReader.NavStep(); // swallow the stick state held from play
+            State = GameState.Reward;
+            Time.timeScale = 0f; // pause combat while the cards are open
+        }
+
         public void ShowBanner(string title, string sub, float seconds)
         {
             Banner = title;
