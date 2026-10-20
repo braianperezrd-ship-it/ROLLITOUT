@@ -17,6 +17,8 @@ namespace RollItOut
         public PlayerHealth health;
         public PlayerBallController ball;
         public UpgradeManager upgrades;
+        public PlayerCardEffects effects;
+        public PlayerUpgradeState PlayerUpgrades => upgrades.state;
 
         public int Round { get; private set; }
         public GameState State { get; private set; } = GameState.Playing;
@@ -27,6 +29,7 @@ namespace RollItOut
         public string BannerSub { get; private set; } = "";
         public float BannerTime { get; private set; }
         public int AliveCount => alive.Count;
+        public IReadOnlyList<EnemyController> Alive => alive;
 
         readonly List<EnemyController> alive = new List<EnemyController>();
         float hpScale = 1f, speedScale = 1f, projScale = 1f, cooldownScale = 1f;
@@ -66,6 +69,7 @@ namespace RollItOut
 
             ball.SetVelocity(Vector2.zero); // each round starts at rest
             ball.controlEnabled = true;
+            health.OnRoundStart();
 
             Banner = "ROUND " + n;
             BannerSub = n == 1 ? "Every enemy can shoot - watch the telegraphs!"
@@ -128,6 +132,7 @@ namespace RollItOut
         public void OnEnemyDied(EnemyController e)
         {
             alive.Remove(e);
+            if (effects != null) effects.OnEnemyKilled(e); // may kill more enemies (Explosive Impact)
             if (State == GameState.Playing && alive.Count == 0) BeginClear();
         }
 
@@ -138,6 +143,7 @@ namespace RollItOut
             ClearProjectiles(); // nothing may hurt the player between clear and the reward screen
         }
 
+        /// <summary>Also clears card damage zones, which live under the projectile parent.</summary>
         void ClearProjectiles()
         {
             for (int i = ProjectileParent.childCount - 1; i >= 0; i--) Destroy(ProjectileParent.GetChild(i).gameObject);

@@ -49,3 +49,7 @@ player, enemies and UI at runtime, so there is no scene wiring or art to import.
 
 Game code is in `Assets/_Project/Scripts/Runtime/` (namespace `RollItOut`). Tuning values live at the top of each
 script (`PlayerBallController`, `PlayerCollisionDamage`, `PlayerHealth`, `EnemyDefs`, `RoundManager.Composition`).
+
+Upgrade cards are data in `CardDefs` (`UpgradeManager.cs`): name, category, rarity, text, stack limit and icon. Stat cards
+are read in `PlayerUpgradeState`; on-hit, on-kill and trail cards run in `PlayerCardEffects`. Rewards are weighted by
+rarity (Common 6 : Rare 3 : Epic 1) and never repeat a card within one offer.

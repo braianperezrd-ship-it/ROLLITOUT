@@ -43,12 +43,14 @@ namespace RollItOut
         }
     }
 
-    /// <summary>Shared enemy logic: chase / keep-distance movement, knockback, wound, ranged telegraph + fire.</summary>
+    /// <summary>Shared enemy logic: chase / keep-distance movement, knockback, wound cards, ranged telegraph + fire.</summary>
     public class EnemyController : MonoBehaviour
     {
         public EnemyDef Def { get; private set; }
         public bool Dead { get; private set; }
         public bool Active => spawnTimer <= 0f;
+        public bool Wounded => woundLeft > 0f;
+        public float Radius => Def.size * 0.5f;
         public float nextCollisionHitTime;
 
         RoundManager round;
@@ -59,7 +61,7 @@ namespace RollItOut
         SpriteRenderer body;
         Transform hpFill, telegraph;
         SpriteRenderer telegraphSr;
-        float hp, maxHp, spawnTimer, spawnTotal, flashTimer, woundLeft, woundTick;
+        float hp, maxHp, spawnTimer, spawnTotal, flashTimer, woundLeft, woundTick, woundDps, bloodTimer;
         Vector2 knockVel;
         bool telegraphing;
         float stateTimer, strafeSign = 1f;
@@ -145,8 +147,15 @@ namespace RollItOut
                 {
                     woundTick -= 0.5f;
                     Fx.Burst(transform.position, new Color(0.8f, 0.05f, 0.1f), 2, 2f, 0.12f, 0.3f);
-                    Damage(PlayerUpgradeState.WoundDps * 0.5f);
+                    Damage(woundDps * 0.5f);
                     if (Dead) return;
+                }
+                // Blood Trail: a wounded enemy on the move drips puddles that hurt other enemies.
+                bloodTimer -= dt;
+                if (bloodTimer <= 0f && round.PlayerUpgrades.Has(UpgradeType.BloodTrail) && rb.GetVel().sqrMagnitude > 0.25f)
+                {
+                    bloodTimer = 0.3f;
+                    DamageZone.Spawn(round, transform.position, 0.45f, 6f, 1.5f, new Color(0.7f, 0.05f, 0.1f, 0.45f));
                 }
             }
 
@@ -240,6 +249,7 @@ namespace RollItOut
                 }
             }
 
+            if (Wounded && round.PlayerUpgrades.Has(UpgradeType.OpenWound)) desired *= 0.85f;
             rb.SetVel(desired + knockVel);
             DecayKnock();
         }
@@ -249,16 +259,36 @@ namespace RollItOut
             knockVel = Vector2.MoveTowards(knockVel, Vector2.zero, 30f * Time.fixedDeltaTime);
         }
 
-        public void TakeHit(int damage, Vector2 dir, float impactSpeed, float woundDuration)
+        public void ApplyWound(float duration, float dps)
+        {
+            if (Dead || duration <= 0f) return;
+            if (woundLeft <= 0f) woundTick = 0f;
+            woundLeft = Mathf.Max(woundLeft, duration);
+            woundDps = Mathf.Max(woundDps, dps);
+        }
+
+        public void TakeHit(float damage, Vector2 dir, float impactSpeed, float knockbackMul)
         {
             if (Dead) return;
             Fx.Burst(transform.position, Def.color, 6, 5f, 0.15f, 0.3f);
             flashTimer = 0.1f;
-            if (woundDuration > 0f) { woundLeft = woundDuration; woundTick = 0f; }
             Damage(damage);
             if (Dead) return;
             // Knockback scales with impact speed (clamped); heavy enemies barely move.
-            knockVel = dir * Mathf.Clamp(impactSpeed * 2f, 4f, 16f) / Def.knockbackResistance;
+            knockVel = dir * Mathf.Clamp(impactSpeed * 2f, 4f, 16f) * knockbackMul / Def.knockbackResistance;
+        }
+
+        /// <summary>Damage from card effects (pulses, explosions, trails). Optional outward push.</summary>
+        public void TakeAreaDamage(float amount, Vector2 from, float push)
+        {
+            if (Dead || !Active) return;
+            if (push > 0f)
+            {
+                Vector2 d = (Vector2)transform.position - from;
+                knockVel = (d.sqrMagnitude > 0.0001f ? d.normalized : Random.insideUnitCircle.normalized) * push / Def.knockbackResistance;
+                flashTimer = 0.08f;
+            }
+            Damage(amount);
         }
 
         void Damage(float amount)
