@@ -13,7 +13,6 @@ namespace RollItOut
         public const float DashSpeedMultiplier = 2.6f; // of current max speed
 
         public Transform roller;       // rotates to show rolling
-        public Transform face;         // armadillo head and tail, turned toward the move direction
         public GameObject stoneShield; // visible while Stone Skin charges remain
         public bool controlEnabled = true;
 
@@ -99,12 +98,6 @@ namespace RollItOut
             {
                 float dir = v.x != 0f ? -Mathf.Sign(v.x) : -Mathf.Sign(v.y);
                 roller.Rotate(0f, 0f, dir * speed * Mathf.Rad2Deg * Time.deltaTime / 0.5f);
-            }
-            if (face != null && speed > 0.3f)
-            {
-                float target = Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg - 90f;
-                float z = Mathf.LerpAngle(face.localEulerAngles.z, target, 1f - Mathf.Exp(-14f * Time.deltaTime));
-                face.localRotation = Quaternion.Euler(0f, 0f, z);
             }
 
             // Dust only on fast movement, kept small and low alpha so projectiles stay readable.
