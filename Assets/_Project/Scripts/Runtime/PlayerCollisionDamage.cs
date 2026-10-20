@@ -30,19 +30,17 @@ namespace RollItOut
         public const float WallSpeedGain = 1.15f, WallSpeedCap = 1.8f;
         /// <summary>Slingshot: bigger speed gain and cap per wall bounce, and the bounce restarts the dash burst.</summary>
         public const float SlingshotSpeedGain = 1.3f, SlingshotSpeedCap = 2.4f;
-        /// <summary>Rebound: a plain roll this close to max speed bounces off walls like a dash does.</summary>
-        public const float ReboundSpeedFraction = 0.85f;
         /// <summary>Each bounce banks a charge: +damage on the next enemy hit, if it lands within the window.</summary>
         public const int MaxWallCharges = 3;
         public const float WallChargeDamage = 0.25f, WallChargeWindow = 2f;
         const float WallBounceCooldown = 0.1f;
-        /// <summary>Pinball: how far a crash looks for the next enemy, and how many bounces chain before it stops.</summary>
-        public const float PinballRange = 6f, PinballChainWindow = 1f;
-        public const int PinballMaxChain = 4;
+        /// <summary>Rebound: how far a crash looks for the next enemy, and how many bounces chain before it stops.</summary>
+        public const float ReboundRange = 6f, ReboundChainWindow = 1f;
+        public const int ReboundMaxChain = 4;
 
         float nextWallBounceTime;
-        int pinballChain;
-        float pinballUntil = -1f;
+        int reboundChain;
+        float reboundUntil = -1f;
 
         PlayerBallController ctrl;
         PlayerUpgradeState up;
@@ -90,16 +88,14 @@ namespace RollItOut
         {
             if (Time.time < nextWallBounceTime || c.contactCount == 0) return;
             Vector2 pre = ctrl.PreStepVelocity;
-            // A normal roll into a wall just stops, only a dash bounces (or a fast roll, with Rebound).
-            bool rebound = !ctrl.RecentlyDashed && up.Has(UpgradeType.Rebound) && pre.magnitude >= up.MaxSpeed * ReboundSpeedFraction;
-            if (!ctrl.RecentlyDashed && !rebound) return;
+            if (!ctrl.RecentlyDashed) return; // a normal roll into a wall just stops, only a dash bounces
 
             Vector2 n = c.GetContact(0).normal;
             if (Vector2.Dot(pre, n) > 0f) n = -n; // make it face against the incoming roll
             if (Vector2.Dot(pre.normalized, n) > -0.3f) return; // grazing along the wall, not hitting it
 
             nextWallBounceTime = Time.time + WallBounceCooldown;
-            bool sling = up.Has(UpgradeType.Slingshot) && !rebound; // Slingshot only relaunches a real dash
+            bool sling = up.Has(UpgradeType.Slingshot);
             ctrl.WallBounce(pre, n, sling ? SlingshotSpeedGain : WallSpeedGain, up.MaxSpeed * (sling ? SlingshotSpeedCap : WallSpeedCap), sling);
 
             up.wallCharges = up.ActiveWallCharges < MaxWallCharges ? up.ActiveWallCharges + 1 : MaxWallCharges;
@@ -172,26 +168,26 @@ namespace RollItOut
             float recoil = Mathf.Clamp(impact * 0.3f, 1.5f, 3.5f) * Mathf.Lerp(1f, 1.6f, heavy);
             if (up.Has(UpgradeType.Ricochet)) recoil *= 1.3f;
             Vector2 sideways = pre - dir * Vector2.Dot(pre, dir);
-            if (!PinballBounce(e, impact)) ctrl.SetVelocity(-dir * recoil + sideways * 0.8f);
+            if (!ReboundBounce(e, impact)) ctrl.SetVelocity(-dir * recoil + sideways * 0.8f);
 
             if (impact > 7.5f) CameraShake.Shake(0.12f, 0.12f);
             if (effects != null) effects.OnEnemyHit(e, impact);
         }
 
         /// <summary>
-        /// Pinball: instead of recoiling, the ball shoots off the enemy it just crashed into toward the nearest other
-        /// enemy, at no less than max speed, so it can ping between them. Chains stop after PinballMaxChain bounces.
+        /// Rebound: instead of recoiling, the ball shoots off the enemy it just crashed into toward the nearest other
+        /// enemy, at no less than max speed, so it can ping between them. Chains stop after ReboundMaxChain bounces.
         /// </summary>
-        bool PinballBounce(EnemyController hit, float impact)
+        bool ReboundBounce(EnemyController hit, float impact)
         {
-            if (!up.Has(UpgradeType.Pinball) || effects == null || effects.round == null) return false;
-            if (Time.time >= pinballUntil) pinballChain = 0;
-            if (pinballChain >= PinballMaxChain) return false;
+            if (!up.Has(UpgradeType.Rebound) || effects == null || effects.round == null) return false;
+            if (Time.time >= reboundUntil) reboundChain = 0;
+            if (reboundChain >= ReboundMaxChain) return false;
 
             Vector2 pos = transform.position;
             Vector2 back = ((Vector2)hit.transform.position - pos).normalized;
             EnemyController best = null;
-            float bestD = PinballRange;
+            float bestD = ReboundRange;
             foreach (var o in effects.round.Alive)
             {
                 if (o == hit || o.Dead || !o.Active) continue;
@@ -202,11 +198,11 @@ namespace RollItOut
             }
             if (best == null) return false;
 
-            pinballChain++;
-            pinballUntil = Time.time + PinballChainWindow;
+            reboundChain++;
+            reboundUntil = Time.time + ReboundChainWindow;
             Vector2 to = ((Vector2)best.transform.position - pos).normalized;
             ctrl.SetVelocity(to * Mathf.Max(impact, up.MaxSpeed));
-            Fx.Burst(pos, new Color(1f, 0.8f, 0.3f), 6 + 2 * pinballChain, 6f, 0.14f, 0.3f);
+            Fx.Burst(pos, new Color(1f, 0.8f, 0.3f), 6 + 2 * reboundChain, 6f, 0.14f, 0.3f);
             return true;
         }
 
