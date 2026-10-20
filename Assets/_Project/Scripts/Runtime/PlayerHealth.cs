@@ -41,9 +41,12 @@ namespace RollItOut
         public float PartialFraction => Dead ? 0f : (damageTaken % UnitsPerHeart) / UnitsPerHeart;
         public event Action Died;
 
-        void Awake() { ctrl = GetComponent<PlayerBallController>(); }
-
-        void Start() { lastDamagedTime = Time.time; }
+        void Start()
+        {
+            // Looked up in Start: GameBootstrap adds PlayerBallController after this component, so it isn't there in Awake.
+            ctrl = GetComponent<PlayerBallController>();
+            lastDamagedTime = Time.time;
+        }
 
         public void OnRoundStart() { secondChanceUsed = false; }
 
@@ -76,7 +79,12 @@ namespace RollItOut
                 Fx.Burst(hitPos, new Color(0.6f, 0.9f, 1f), 10, 6f, 0.14f, 0.3f);
                 return HitResult.Reflected;
             }
-            if (dashing && upgrades.Has(UpgradeType.PhaseDash)) return HitResult.Ignored;
+            if (dashing && upgrades.Has(UpgradeType.PhaseDash))
+            {
+                // Absorb the shot instead of letting it pass: one still overlapping when the dash ends would hit.
+                Fx.Burst(hitPos, new Color(0.6f, 0.9f, 1f, 0.6f), 6, 4f, 0.12f, 0.25f);
+                return HitResult.Blocked;
+            }
 
             if (upgrades.Has(UpgradeType.Deflect) && ctrl != null && ctrl.PreStepVelocity.magnitude >= upgrades.MaxSpeed * DeflectSpeedFraction)
             {
