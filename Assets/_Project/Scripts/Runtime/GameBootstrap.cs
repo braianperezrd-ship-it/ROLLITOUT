@@ -92,6 +92,8 @@ namespace RollItOut
             hud.health = rm.health;
             hud.upgrades = state;
             hud.upgradeMgr = upgrades;
+
+            mgrGo.AddComponent<PauseMenu>().round = rm;
         }
 
         static void BuildArena(Transform parent)
