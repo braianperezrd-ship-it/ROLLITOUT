@@ -50,6 +50,7 @@ namespace RollItOut
         public bool Dead { get; private set; }
         public bool Active => spawnTimer <= 0f;
         public float nextCollisionHitTime;
+        public const float HitFlashTime = 0.12f;
 
         RoundManager round;
         Transform player;
@@ -57,6 +58,8 @@ namespace RollItOut
         Rigidbody2D rb;
         CircleCollider2D col;
         SpriteRenderer body;
+        SpriteRenderer[] parts;   // every body sprite, so a hit flashes the whole enemy white
+        Color[] partColors;
         Transform hpFill, telegraph;
         SpriteRenderer telegraphSr;
         float hp, maxHp, spawnTimer, spawnTotal, flashTimer, woundLeft, woundTick;
@@ -102,6 +105,10 @@ namespace RollItOut
                 SpriteLib.Add(transform, "EarR", SpriteLib.Diamond, baseColor, 4, new Vector3(0.5f, 0.1f, 0f) * s, new Vector3(0.45f, 0.3f, 1f) * s);
             }
 
+            parts = GetComponentsInChildren<SpriteRenderer>();
+            partColors = new Color[parts.Length];
+            for (int i = 0; i < parts.Length; i++) partColors[i] = parts[i].color;
+
             // HP bar (always above the body, never rotates).
             float y = s * 0.5f + 0.22f;
             SpriteLib.Add(transform, "HpBack", SpriteLib.Square, new Color(0f, 0f, 0f, 0.7f), 8, new Vector3(0f, y, 0f), new Vector3(s + 0.06f, 0.14f, 1f));
@@ -145,13 +152,19 @@ namespace RollItOut
                 {
                     woundTick -= 0.5f;
                     Fx.Burst(transform.position, new Color(0.8f, 0.05f, 0.1f), 2, 2f, 0.12f, 0.3f);
+                    DamageNumbers.Spawn(PopupPos(), PlayerUpgradeState.WoundDps * 0.5f, new Color(1f, 0.35f, 0.35f), false);
                     Damage(PlayerUpgradeState.WoundDps * 0.5f);
                     if (Dead) return;
                 }
             }
 
-            if (flashTimer > 0f) { flashTimer -= dt; body.color = Color.white; }
-            else body.color = woundLeft > 0f ? Color.Lerp(baseColor, new Color(0.85f, 0.1f, 0.15f), 0.4f) : baseColor;
+            if (flashTimer > 0f)
+            {
+                flashTimer -= dt;
+                bool on = flashTimer > 0f;
+                for (int i = 0; i < parts.Length; i++) parts[i].color = on ? Color.white : partColors[i];
+            }
+            if (flashTimer <= 0f) body.color = woundLeft > 0f ? Color.Lerp(baseColor, new Color(0.85f, 0.1f, 0.15f), 0.4f) : baseColor;
 
             if (Def.telegraph > 0f && player != null) UpdateRanged(dt);
         }
@@ -253,13 +266,16 @@ namespace RollItOut
         {
             if (Dead) return;
             Fx.Burst(transform.position, Def.color, 6, 5f, 0.15f, 0.3f);
-            flashTimer = 0.1f;
+            flashTimer = HitFlashTime;
+            DamageNumbers.Spawn(PopupPos(), damage, Color.white, true);
             if (woundDuration > 0f) { woundLeft = woundDuration; woundTick = 0f; }
             Damage(damage);
             if (Dead) return;
             // Knockback scales with impact speed (clamped); heavy enemies barely move.
             knockVel = dir * Mathf.Clamp(impactSpeed * 2f, 4f, 16f) / Def.knockbackResistance;
         }
+
+        Vector3 PopupPos() { return transform.position + Vector3.up * (Def.size * 0.5f + 0.45f); }
 
         void Damage(float amount)
         {
